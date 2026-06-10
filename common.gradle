@@ -12,14 +12,20 @@ repositories {
 		url = 'https://maven.parchmentmc.org'
 		content { includeGroup('org.parchmentmc.data') }
 	}
-	maven {
-		url = 'https://jitpack.io'
+	maven { url = 'https://maven.fallenbreath.me/releases'
+		content { includeGroupAndSubgroups("me.fallenbreath") }
+	}
+	maven { url = 'https://maven.terraformersmc.com/releases/'
+		content { includeGroupAndSubgroups("com.terraformersmc") }
+	}
+	maven { url = 'https://jitpack.io'
 		content { includeGroupAndSubgroups('com.github') }
 	}
-	maven {
-		url = 'https://maven.fallenbreath.me/releases'
-		content { includeGroup('me.fallenbreath') }
+	maven { url = 'https://maven.sakuraryoko.com'
+		content {includeGroupAndSubgroups("com.sakuraryoko") }
 	}
+	maven { url = 'https://maven.nucleoid.xyz' }
+	maven { url = 'https://oss.sonatype.org/content/repositories/snapshots' }
 }
 
 dependencies {
@@ -48,35 +54,54 @@ dependencies {
 	}
 	autoImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
+	// debuggers
+	autoImplementation "org.jspecify:jspecify:1.0.0"
+	autoImplementation "com.google.code.findbugs:jsr305:3.0.2"
+
+
+	// External Dependencies
+
 	// runtime mods
 //	if (mcVersion < 11904) {
 //		autoRuntimeOnly(mcVersion < 11900 ? "com.github.astei:lazydfu:0.1.2" : "com.github.Fallen-Breath:lazydfu:a7cfc44c0c")
 //	}
-//	// [FEATURE] MIXIN_AUDITOR
-//	autoRuntimeOnly "me.fallenbreath:mixin-auditor:0.2.0-${unobfuscated ? 'u' : 'o'}"
+	// [FEATURE] MIXIN_AUDITOR
+	autoRuntimeOnly "me.fallenbreath:mixin-auditor:0.2.0-${unobfuscated ? 'u' : 'o'}"
 
 	// dependencies
-//	def fabricApiModules = []
+	def fabricApiModules = []
 //	if (mcVersion >= 12105) {  // "fabric-resource-loader-v0" dependency since fabric api 0.117.0 (25w07a, mc1.21.5 snapshot)
-//		fabricApiModules.add("fabric-api-base")
+	fabricApiModules.add("fabric-api-base")
 //	}
-//	if (mcVersion < 12111) {  // "fabric-resource-loader" is fully moved from v0 to v1 since fabric api 0.139.3 (1.21.11-pre4)
-//		fabricApiModules.add("fabric-resource-loader-v0")
-//	}
-//	if (mcVersion >= 12109) {  // "fabric-resource-loader-v0" dependency since fabric api 0.133.11 (1.21.9-rc1)
-//		fabricApiModules.add("fabric-resource-loader-v1")
-//	}
-//	fabricApiModules.forEach {
-//		include(autoImplementation(fabricApi.module(it, project.fabric_api_version)))
-//	}
-//	include(autoImplementation("me.fallenbreath:conditional-mixin-fabric:${project.conditionalmixin_version}"))
-//	if (mcVersion < 12005) {
-//		include("io.github.llamalad7:mixinextras-fabric:${project.mixinextras_version}")
-//	}
+	if (mcVersion < 12111) {  // "fabric-resource-loader" is fully moved from v0 to v1 since fabric api 0.139.3 (1.21.11-pre4)
+		fabricApiModules.add("fabric-resource-loader-v0")
+	}
+	if (mcVersion >= 12109) {  // "fabric-resource-loader-v0" dependency since fabric api 0.133.11 (1.21.9-rc1)
+		fabricApiModules.add("fabric-resource-loader-v1")
+	}
+	fabricApiModules.forEach {
+		include(autoImplementation(fabricApi.module(it, project.fabric_api_version)))
+	}
+	include(autoImplementation("me.fallenbreath:conditional-mixin-fabric:${project.conditionalmixin_version}"))
+	if (mcVersion < 12005) {
+		include("io.github.llamalad7:mixinextras-fabric:${project.mixinextras_version}")
+	}
+
+	// modmenu
+//	autoCompileOnly "com.terraformersmc:modmenu:${project.mod_menu_version}"
+
+	// AFKPlus Specific
+//	autoImplementation include("com.github.sakura-ryoko.corelib:corelib-mc${project.minecraft_version}:${project.corelib_version}")
+//	autoImplementation include("com.github.sakura-ryoko.more-color-api:more-color-api-mc${project.minecraft_version}:${project.more_color_api_version}")
+	autoImplementation include("com.sakuraryoko:corelib:${project.corelib_version}-mc${project.minecraft_version}")
+//	autoImplementation include("com.sakuraryoko:more-color-api:${project.more_color_api_version}-mc${project.minecraft_version}")
+	autoImplementation include("me.lucko:fabric-permissions-api:${project.fabric_permissions_api_version}")
+//	autoImplementation "eu.pb4:placeholder-api:${project.placeholder_api_version}"
+//	autoCompileOnly "maven.modrinth:vanish:${project.vanish_compat_version}"
 }
 
-String MIXIN_CONFIG_PATH = 'template_mod.mixins.json'
-String LANG_DIR = 'assets/template_mod/lang'
+String MIXIN_CONFIG_PATH = 'afkme.mixins.json'
+//String LANG_DIR = 'assets/afkme/lang'
 JavaVersion JAVA_COMPATIBILITY
 if (mcVersion >= 260000) {
 	JAVA_COMPATIBILITY = JavaVersion.VERSION_25
@@ -99,20 +124,23 @@ loom {
 		runDir '../../run'
 		vmArgs commonVmArgs
 	}
-//	// [FEATURE] MIXIN_AUDITOR
-//	runs {
-//		def auditVmArgs = [*commonVmArgs, '-DmixinAuditor.audit=true']
-//		serverMixinAudit {
-//			server()
-//			vmArgs auditVmArgs
-//			ideConfigGenerated false
-//		}
-//		clientMixinAudit {
-//			client()
-//			vmArgs auditVmArgs
-//			ideConfigGenerated false
-//		}
-//	}
+	// [FEATURE] MIXIN_AUDITOR
+	runs {
+		def auditVmArgs = [*commonVmArgs, '-DmixinAuditor.audit=true']
+		clientMixinAudit {
+			client()
+			vmArgs auditVmArgs
+			ideConfigGenerated false
+		}
+	}
+	runs {
+		def auditVmArgs = [*commonVmArgs, '-DmixinAuditor.audit=true']
+		serverMixinAudit {
+			server()
+			vmArgs auditVmArgs
+			ideConfigGenerated false
+		}
+	}
 }
 
 String modVersionSuffix = ''
@@ -153,9 +181,11 @@ version = fullProjectVersion
 // if IDEA complains about "Cannot resolve resource filtering of MatchingCopyAction" and you want to know why
 processResources {
 	def modProperties = [
-			"id"                  : project.mod_id,
-			"name"                : project.mod_name,
-			"version"             : fullModVersion,
+			"mod_id"              : project.mod_id,
+			"mod_name"            : project.mod_name,
+			"mod_version"         : project.mod_version,
+			"mod_author" 		  : project.mod_author,
+			"maven_group" 		  : project.maven_group,
 			"minecraft_dependency": project.minecraft_dependency,
 	]
 	inputs.properties(modProperties)
@@ -170,10 +200,10 @@ processResources {
 }
 
 // https://github.com/Fallen-Breath/yamlang
-yamlang {
-	targetSourceSets = [sourceSets.main]
-	inputDir = LANG_DIR
-}
+//yamlang {
+//	targetSourceSets = [sourceSets.main]
+//	inputDir = LANG_DIR
+//}
 
 // ensure that the encoding is set to UTF-8, no matter what the system default is
 // this fixes some edge cases with special characters not displaying correctly
@@ -232,7 +262,7 @@ license {
 	}
 	ext {
 		name = project.mod_name
-		author = 'Fallen_Breath'
+		author = 'Sakura-Ryoko'
 		year = Calendar.getInstance().get(Calendar.YEAR).toString()
 	}
 }
@@ -252,6 +282,9 @@ publishing {
 	// select the repositories you want to publish to
 	repositories {
 		// mavenLocal()
+		maven {
+			url = "$projectDir/../../../../CommonMaven"
+		}
 
 //		// [FEATURE] FALLENS_MAVEN
 //		maven {

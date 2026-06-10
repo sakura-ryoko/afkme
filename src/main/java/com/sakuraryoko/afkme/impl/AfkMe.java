@@ -18,38 +18,33 @@
  * along with TemplateMod.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package me.fallenbreath.template_mod;
+package com.sakuraryoko.afkme.impl;
 
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.api.metadata.ModMetadata;
-
-//#if MC >= 1.18.2
-//$$ import com.mojang.logging.LogUtils;
-//$$ import org.slf4j.Logger;
-//#else
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-//#endif
+import org.jetbrains.annotations.ApiStatus;
 
-public class TemplateMod implements ModInitializer
+import net.fabricmc.api.ModInitializer;
+
+import com.sakuraryoko.afkme.impl.modinit.AfkMeInit;
+import com.sakuraryoko.corelib.impl.modinit.ModInitManager;
+
+@ApiStatus.Internal
+public class AfkMe implements ModInitializer
 {
-	public static final Logger LOGGER =
-			//#if MC >= 11802
-			//$$ LogUtils.getLogger();
-			//#else
-			LogManager.getLogger();
-			//#endif
+	public static Logger LOGGER = LogManager.getLogger(Reference.MOD_ID);
 
-	public static final String MOD_ID = "template_mod";
-	public static String MOD_VERSION = "unknown";
-	public static String MOD_NAME = "unknown";
+	public static void debugLog(String key, Object... args)
+	{
+		if (Reference.DEBUG)
+		{
+			LOGGER.info(String.format("[DEBUG] %s", key), args);
+		}
+	}
 
 	@Override
 	public void onInitialize()
 	{
-		ModMetadata metadata = FabricLoader.getInstance().getModContainer(MOD_ID).orElseThrow(RuntimeException::new).getMetadata();
-		MOD_NAME = metadata.getName();
-		MOD_VERSION = metadata.getVersion().getFriendlyString();
+		ModInitManager.getInstance().registerModInitHandler(AfkMeInit.getInstance());
 	}
 }

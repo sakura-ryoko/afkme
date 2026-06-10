@@ -1,33 +1,35 @@
 {
   "schemaVersion": 1,
-  "id": "${id}",
-  "version": "${version}",
-
-  "name": "${name}",
-  "description": "Template for my fabric mods",
+  "id": "${mod_id}",
+  "version": "${mod_version}",
+  "name": "${mod_name}",
+  "description": "Shadow players as AFK",
   "authors": [
-    "Fallen_Breath"
+    "${mod_author}"
   ],
   "contact": {
-    "homepage": "https://modrinth.com",
-    "sources": "https://github.com/Fallen-Breath/fabric-mod-template"
+    "homepage": "https://modrinth.com/mod/${mod_id}",
+    "sources": "https://github.com/${mod_author}/${mod_id}",
+    "issues": "https://github.com/${mod_author}/${mod_id}/issues"
   },
   "license": "LGPL-3.0",
 
-  "icon": "icon.png",
+  "icon": "assets/afkme/icon.png",
 
   "environment": "*",
   "entrypoints": {
     "main": [
-      "me.fallenbreath.template_mod.TemplateMod"
+      "com.sakuraryoko.afkme.impl.AfkMe"
     ]
   },
   "mixins": [
-    "template_mod.mixins.json"
+    "afkme.mixins.json"
   ],
 
   "depends": {
     "fabricloader": ">=0.11.4",
+    "corelib": "*",
+    "fabric-permissions-api-v0": "*",
     "minecraft": "${minecraft_dependency}"
   }
 }
