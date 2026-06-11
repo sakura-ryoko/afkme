@@ -18,4 +18,20 @@
  * along with AfkMe.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.sakuraryoko.afkme.impl.mixins;
+package com.sakuraryoko.afkme.impl.player.interfaces;
+
+import org.jetbrains.annotations.ApiStatus;
+
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
+
+@ApiStatus.Internal
+public interface IPlayerInvoker
+{
+	ServerPlayer afkme$player();
+
+	MinecraftServer afkme$server();
+
+	ServerGamePacketListenerImpl afkme$connection();
+}

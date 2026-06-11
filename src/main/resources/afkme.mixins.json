@@ -1,16 +1,25 @@
 {
-  "required": true,
-  "minVersion": "0.8",
-  "package": "com.sakuraryoko.afkme.impl.mixins",
-  "compatibilityLevel": "{{COMPATIBILITY_LEVEL}}",
-  "mixins": [
-  ],
-  "client": [
-  ],
-  "injectors": {
-    "defaultRequire": 1
-  },
-  "overwrites": {
-    "requireAnnotations": true
+    "required": true,
+    "minVersion": "0.8",
+    "package": "com.sakuraryoko.afkme.impl.mixins",
+    "plugin": "com.sakuraryoko.afkme.impl.compat.mixin.AfkMeMixinConfigPlugin",
+    "compatibilityLevel": "{{COMPATIBILITY_LEVEL}}",
+    "mixins": [
+        "MixinConnection",
+        "MixinEntity",
+        "MixinPistonMovingBlockEntity",
+        "MixinPlayer",
+        "MixinPlayerList",
+        "MixinServerLoginPacketListenerImpl",
+        "MixinServerPlayer",
+        "MixinTickRateManager"
+    ],
+    "client": [
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    },
+    "overwrites": {
+        "requireAnnotations": true
   }
 }

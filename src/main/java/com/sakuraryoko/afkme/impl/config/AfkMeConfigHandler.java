@@ -22,14 +22,18 @@ package com.sakuraryoko.afkme.impl.config;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.jetbrains.annotations.ApiStatus;
 
 import com.sakuraryoko.afkme.impl.AfkMe;
 import com.sakuraryoko.afkme.impl.Reference;
 import com.sakuraryoko.afkme.impl.config.data.AfkMeConfigData;
-import com.sakuraryoko.afkme.impl.config.data.options.AfkMeOptions;
+import com.sakuraryoko.afkme.impl.config.data.options.MainOptions;
+import com.sakuraryoko.afkme.impl.config.data.options.MessageOptions;
+import com.sakuraryoko.afkme.impl.config.data.options.PlayerOptions;
 import com.sakuraryoko.afkme.impl.modinit.AfkMeInit;
+import com.sakuraryoko.afkme.impl.player.PlayerManager;
 import com.sakuraryoko.corelib.api.config.IConfigData;
 import com.sakuraryoko.corelib.api.config.IConfigDispatch;
 import com.sakuraryoko.corelib.api.time.TimeFormat;
@@ -74,9 +78,19 @@ public class AfkMeConfigHandler implements IConfigDispatch
         return CONFIG;
     }
 
-    public AfkMeOptions getAfkMeOptions()
+    public MainOptions getMainOptions()
     {
-        return CONFIG.AFK_ME;
+        return CONFIG.MAIN;
+    }
+
+    public MessageOptions getMessageOptions()
+    {
+        return CONFIG.MESS;
+    }
+
+    public List<PlayerOptions> getPlayerOptions()
+    {
+        return CONFIG.PLAYERS;
     }
 
     @Override
@@ -150,11 +164,19 @@ public class AfkMeConfigHandler implements IConfigDispatch
     public AfkMeConfigData defaults()
     {
         AfkMeConfigData config = this.newConfig();
-        AfkMe.debugLog("AfkConfigHandler#defaults(): Setting default config.");
+        AfkMe.debugLog("AfkMeConfigHandler#defaults(): Setting default config.");
 
         // Set default values
         config.config_date = TimeFormat.RFC1123.formatNow(null);
-        config.AFK_ME.defaults();
+        config.MAIN.defaults();
+        config.MESS.defaults();
+
+        // Copy Players Config
+        CONFIG.PLAYERS.clear();
+        config.PLAYERS.forEach(
+                player ->
+                        CONFIG.PLAYERS.add(new PlayerOptions(player))
+        );      // Deep copy
 
         return config;
     }
@@ -163,15 +185,16 @@ public class AfkMeConfigHandler implements IConfigDispatch
     public AfkMeConfigData update(IConfigData newConfig)
     {
         AfkMeConfigData newConf = (AfkMeConfigData) newConfig;
-        AfkMe.debugLog("AfkConfigHandler#update(): Refresh config.");
+        AfkMe.debugLog("AfkMeConfigHandler#update(): Refresh config.");
 
         // Refresh
         CONFIG.comment = AfkMeInit.getInstance().getModVersionString() + " Config";
         CONFIG.config_date = TimeFormat.RFC1123.formatNow(null);
-        AfkMe.debugLog("AfkConfigHandler#update(): save_date: {} --> {}", newConf.config_date, CONFIG.config_date);
+        AfkMe.debugLog("AfkMeConfigHandler#update(): save_date: {} --> {}", newConf.config_date, CONFIG.config_date);
 
         // Copy Incoming Config
-        CONFIG.AFK_ME.copy(newConf.AFK_ME);
+        CONFIG.MAIN.copy(newConf.MAIN);
+        CONFIG.MESS.copy(newConf.MESS);
 
         return CONFIG;
     }
@@ -179,9 +202,15 @@ public class AfkMeConfigHandler implements IConfigDispatch
     @Override
     public void execute(boolean fromInit)
     {
-        AfkMe.debugLog("AfkConfigHandler#execute(): Execute config.");
+        AfkMe.debugLog("AfkMeConfigHandler#execute(): Execute config.");
+
+        // Load data into Player Manager.
+        CONFIG.PLAYERS.forEach(
+                player ->
+                        PlayerManager.getInstance().syncFromConfig(player)
+        );
 
         // Do this when the Config gets finalized.
-        AfkMe.debugLog("AfkConfigHandler#execute(): new config_date: {}", CONFIG.config_date);
+        AfkMe.debugLog("AfkMeConfigHandler#execute(): new config_date: {}", CONFIG.config_date);
     }
 }

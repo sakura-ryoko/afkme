@@ -18,30 +18,46 @@
  * along with AfkMe.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.sakuraryoko.afkme.impl.config;
+package com.sakuraryoko.afkme.impl.player;
 
-import java.util.List;
+import java.util.UUID;
 import org.jetbrains.annotations.ApiStatus;
 
-import com.sakuraryoko.afkme.impl.config.data.options.MainOptions;
-import com.sakuraryoko.afkme.impl.config.data.options.MessageOptions;
-import com.sakuraryoko.afkme.impl.config.data.options.PlayerOptions;
+import com.mojang.authlib.GameProfile;
+//#if MC >= 1.21.10
+//$$ import net.minecraft.server.players.NameAndId;
+//#endif
 
 @ApiStatus.Internal
-public class ConfigWrap
+public class ProfileWrap
 {
-    public static MainOptions mainOpt()
-    {
-        return AfkMeConfigHandler.getInstance().getMainOptions();
-    }
+	public static UUID id(GameProfile profile)
+	{
+//#if MC >= 1.21.10
+		//$$ return profile.id();
+//#else
+		return profile.getId();
+//#endif
+	}
 
-    public static MessageOptions mess()
-    {
-        return AfkMeConfigHandler.getInstance().getMessageOptions();
-    }
+	public static String name(GameProfile profile)
+	{
+//#if MC >= 1.21.10
+		//$$ return profile.name();
+//#else
+		return profile.getName();
+//#endif
+	}
 
-    public static List<PlayerOptions> players()
-    {
-        return AfkMeConfigHandler.getInstance().getPlayerOptions();
-    }
+	//#if MC >= 1.21.10
+	//$$public static GameProfile profile(NameAndId nameAndId)
+	//$$ {
+		//$$ return new GameProfile(nameAndId.id(), nameAndId.name());
+	//$$ }
+	//#endif
+
+	public static GameProfile profile(UUID id, String name)
+	{
+		return new GameProfile(id, name);
+	}
 }

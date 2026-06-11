@@ -18,30 +18,20 @@
  * along with AfkMe.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.sakuraryoko.afkme.impl.config;
+package com.sakuraryoko.afkme.impl.mixins;
 
-import java.util.List;
-import org.jetbrains.annotations.ApiStatus;
+import io.netty.channel.Channel;
 
-import com.sakuraryoko.afkme.impl.config.data.options.MainOptions;
-import com.sakuraryoko.afkme.impl.config.data.options.MessageOptions;
-import com.sakuraryoko.afkme.impl.config.data.options.PlayerOptions;
+import net.minecraft.network.Connection;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
-@ApiStatus.Internal
-public class ConfigWrap
+import com.sakuraryoko.afkme.impl.player.shadow.IShadowConnection;
+
+@Mixin(Connection.class)
+public abstract class MixinConnection implements IShadowConnection
 {
-    public static MainOptions mainOpt()
-    {
-        return AfkMeConfigHandler.getInstance().getMainOptions();
-    }
-
-    public static MessageOptions mess()
-    {
-        return AfkMeConfigHandler.getInstance().getMessageOptions();
-    }
-
-    public static List<PlayerOptions> players()
-    {
-        return AfkMeConfigHandler.getInstance().getPlayerOptions();
-    }
+	@Override
+	@Accessor
+	public abstract void setChannel(Channel channel);
 }

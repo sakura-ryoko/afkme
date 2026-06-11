@@ -25,19 +25,15 @@ import org.jetbrains.annotations.ApiStatus;
 import com.sakuraryoko.corelib.api.config.IConfigOption;
 
 @ApiStatus.Internal
-public class AfkMeOptions implements IConfigOption
+public class MainOptions implements IConfigOption
 {
     public boolean afkMeEnabled;
     public boolean debugMode;
     public int defaultShadowTimeout;
-    public String defaultShadowReason;
-    public String shadowKickMessage;
-    public String shadowExpiredReason;
-    public String shadowStarted;
-    public String shadowPunctuation;
-    public String shadowReturned;
+    public int afkMeCommandPermissions;
 
-    public AfkMeOptions()
+
+    public MainOptions()
     {
         this.defaults();
     }
@@ -46,29 +42,19 @@ public class AfkMeOptions implements IConfigOption
     {
         this.afkMeEnabled = true;
         this.debugMode = false;
-        this.defaultShadowTimeout = 60;
-        this.defaultShadowReason = "<gray>shadowing<r>";
-        this.shadowKickMessage = "<copper>Shadow activation<r>";
-        this.shadowExpiredReason = "<yellow>You didn't come back in time<r>";
-        this.shadowStarted = "<r>%player:displayname%<r> <yellow>is now shadowed<r>";
-        this.shadowPunctuation = "<yellow>,<r> ";
-        this.shadowReturned = "<r>%player:displayname%<r> <yellow>is no longer shadowed<r>";
+        this.defaultShadowTimeout = 129600;
+        this.afkMeCommandPermissions = 0;
     }
 
     @Override
-    public AfkMeOptions copy(IConfigOption opt)
+    public MainOptions copy(IConfigOption opt)
     {
-        AfkMeOptions opts = (AfkMeOptions) opt;
+        MainOptions opts = (MainOptions) opt;
 
         this.afkMeEnabled = opts.afkMeEnabled;
         this.debugMode = opts.debugMode;
         this.defaultShadowTimeout = opts.defaultShadowTimeout;
-        this.defaultShadowReason = opts.defaultShadowReason;
-        this.shadowKickMessage = opts.shadowKickMessage;
-        this.shadowExpiredReason = opts.shadowExpiredReason;
-        this.shadowStarted = opts.shadowStarted;
-        this.shadowPunctuation = opts.shadowPunctuation;
-        this.shadowReturned = opts.shadowReturned;
+        this.afkMeCommandPermissions = opts.afkMeCommandPermissions;
 
         return this;
     }

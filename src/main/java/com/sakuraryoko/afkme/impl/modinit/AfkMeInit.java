@@ -24,12 +24,17 @@ import org.jetbrains.annotations.ApiStatus;
 
 import com.sakuraryoko.afkme.impl.AfkMe;
 import com.sakuraryoko.afkme.impl.Reference;
+import com.sakuraryoko.afkme.impl.commands.CommandRegister;
 import com.sakuraryoko.afkme.impl.config.AfkMeConfigHandler;
 import com.sakuraryoko.afkme.impl.config.ConfigWrap;
+import com.sakuraryoko.afkme.impl.events.PlayerEventsHandler;
+import com.sakuraryoko.afkme.impl.events.ServerEventsHandler;
 import com.sakuraryoko.corelib.api.modinit.IModInitDispatcher;
 import com.sakuraryoko.corelib.api.modinit.ModInitData;
 import com.sakuraryoko.corelib.api.text.ITextHandler;
 import com.sakuraryoko.corelib.impl.config.ConfigManager;
+import com.sakuraryoko.corelib.impl.events.players.PlayerEventsManager;
+import com.sakuraryoko.corelib.impl.events.server.ServerEventsManager;
 import com.sakuraryoko.corelib.impl.text.BuiltinTextHandler;
 
 @ApiStatus.Internal
@@ -68,7 +73,7 @@ public class AfkMeInit implements IModInitDispatcher
     @Override
     public boolean isDebug()
     {
-        return Reference.DEBUG || ConfigWrap.afkMe().debugMode;
+        return Reference.DEBUG || ConfigWrap.mainOpt().debugMode;
     }
 
     @Override
@@ -94,14 +99,12 @@ public class AfkMeInit implements IModInitDispatcher
 
         AfkMe.debugLog("Config Initializing.");
         ConfigManager.getInstance().registerConfigDispatcher(AfkMeConfigHandler.getInstance());
-//        AfkMe.debugLog("Registering Placeholders.");
-//        PlaceholderManager.register();
-//        AfkMe.debugLog("Registering commands.");
-//        CommandRegister.register();
-//        AfkMe.debugLog("Registering Handlers.");
+        AfkMe.debugLog("Registering commands.");
+        CommandRegister.register();
+        AfkMe.debugLog("Registering Handlers.");
 
-//        ServerEventsManager.getInstance().registerEventDispatcher(ServerEventsHandler.getInstance());
-//        PlayerEventsManager.getInstance().registerPlayerEvents(PlayerEventsHandler.getInstance());
+        ServerEventsManager.getInstance().registerEventDispatcher(ServerEventsHandler.getInstance());
+        PlayerEventsManager.getInstance().registerPlayerEvents(PlayerEventsHandler.getInstance());
 
         AfkMe.debugLog("All Tasks Done.");
         this.INIT = true;

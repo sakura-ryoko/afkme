@@ -20,21 +20,32 @@
 
 package com.sakuraryoko.afkme.impl.config.data;
 
+import java.util.ArrayList;
+import java.util.List;
 import com.google.gson.annotations.SerializedName;
 import org.jetbrains.annotations.ApiStatus;
 
-import com.sakuraryoko.afkme.impl.config.data.options.AfkMeOptions;
+import com.sakuraryoko.afkme.impl.config.data.options.MainOptions;
+import com.sakuraryoko.afkme.impl.config.data.options.MessageOptions;
+import com.sakuraryoko.afkme.impl.config.data.options.PlayerOptions;
 import com.sakuraryoko.corelib.api.config.IConfigData;
 
 @ApiStatus.Internal
 public class AfkMeConfigData implements IConfigData
 {
     @SerializedName("___comment")
-    public String comment = "AFK Plus Config";
+    public String comment = "AFK Me Config";
 
     @SerializedName("config_date")
     public String config_date;
 
-    @SerializedName("afk_me")
-    public AfkMeOptions AFK_ME = new AfkMeOptions();
+    @SerializedName("main")
+    public MainOptions MAIN = new MainOptions();
+
+    @SerializedName("messages")
+    public MessageOptions MESS = new MessageOptions();
+
+    @SerializedName("players")
+    public List<PlayerOptions> PLAYERS = new ArrayList<>();
+
 }

@@ -18,30 +18,18 @@
  * along with AfkMe.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.sakuraryoko.afkme.impl.config;
+package com.sakuraryoko.afkme.impl.commands;
 
-import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 
-import com.sakuraryoko.afkme.impl.config.data.options.MainOptions;
-import com.sakuraryoko.afkme.impl.config.data.options.MessageOptions;
-import com.sakuraryoko.afkme.impl.config.data.options.PlayerOptions;
+import com.sakuraryoko.afkme.impl.commands.server.AfkMeCommand;
+import com.sakuraryoko.corelib.impl.commands.CommandManager;
 
 @ApiStatus.Internal
-public class ConfigWrap
+public class CommandRegister
 {
-    public static MainOptions mainOpt()
+    public static void register()
     {
-        return AfkMeConfigHandler.getInstance().getMainOptions();
-    }
-
-    public static MessageOptions mess()
-    {
-        return AfkMeConfigHandler.getInstance().getMessageOptions();
-    }
-
-    public static List<PlayerOptions> players()
-    {
-        return AfkMeConfigHandler.getInstance().getPlayerOptions();
+        CommandManager.getInstance().registerCommandHandler(new AfkMeCommand());
     }
 }

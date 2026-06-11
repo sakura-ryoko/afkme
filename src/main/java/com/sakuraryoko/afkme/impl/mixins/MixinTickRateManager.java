@@ -18,30 +18,16 @@
  * along with AfkMe.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.sakuraryoko.afkme.impl.config;
+package com.sakuraryoko.afkme.impl.mixins;
 
-import java.util.List;
 import org.jetbrains.annotations.ApiStatus;
 
-import com.sakuraryoko.afkme.impl.config.data.options.MainOptions;
-import com.sakuraryoko.afkme.impl.config.data.options.MessageOptions;
-import com.sakuraryoko.afkme.impl.config.data.options.PlayerOptions;
+import org.spongepowered.asm.mixin.Mixin;
 
+import com.sakuraryoko.corelib.impl.util.MixinDummy;
+
+@Mixin(MixinDummy.class)
 @ApiStatus.Internal
-public class ConfigWrap
+public class MixinTickRateManager
 {
-    public static MainOptions mainOpt()
-    {
-        return AfkMeConfigHandler.getInstance().getMainOptions();
-    }
-
-    public static MessageOptions mess()
-    {
-        return AfkMeConfigHandler.getInstance().getMessageOptions();
-    }
-
-    public static List<PlayerOptions> players()
-    {
-        return AfkMeConfigHandler.getInstance().getPlayerOptions();
-    }
 }

@@ -18,30 +18,36 @@
  * along with AfkMe.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.sakuraryoko.afkme.impl.config;
+package com.sakuraryoko.afkme.impl.compat.mixin;
 
 import java.util.List;
-import org.jetbrains.annotations.ApiStatus;
+import java.util.Set;
+import me.fallenbreath.conditionalmixin.api.mixin.RestrictiveMixinConfigPlugin;
 
-import com.sakuraryoko.afkme.impl.config.data.options.MainOptions;
-import com.sakuraryoko.afkme.impl.config.data.options.MessageOptions;
-import com.sakuraryoko.afkme.impl.config.data.options.PlayerOptions;
+import com.sakuraryoko.afkme.impl.AfkMe;
 
-@ApiStatus.Internal
-public class ConfigWrap
+public class AfkMeMixinConfigPlugin extends RestrictiveMixinConfigPlugin
 {
-    public static MainOptions mainOpt()
-    {
-        return AfkMeConfigHandler.getInstance().getMainOptions();
-    }
+	@Override
+	protected void onRestrictionCheckFailed(String mixinClassName, String reason)
+	{
+		AfkMe.LOGGER.warn("Disabled mixin '{}' due to: '{}'", mixinClassName, reason);
+	}
 
-    public static MessageOptions mess()
-    {
-        return AfkMeConfigHandler.getInstance().getMessageOptions();
-    }
+	@Override
+	public String getRefMapperConfig()
+	{
+		return null;
+	}
 
-    public static List<PlayerOptions> players()
-    {
-        return AfkMeConfigHandler.getInstance().getPlayerOptions();
-    }
+	@Override
+	public void acceptTargets(Set<String> myTargets, Set<String> otherTargets)
+	{
+	}
+
+	@Override
+	public List<String> getMixins()
+	{
+		return null;
+	}
 }
