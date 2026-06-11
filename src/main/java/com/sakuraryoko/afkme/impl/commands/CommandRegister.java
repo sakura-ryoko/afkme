@@ -22,6 +22,7 @@ package com.sakuraryoko.afkme.impl.commands;
 
 import org.jetbrains.annotations.ApiStatus;
 
+import com.sakuraryoko.afkme.impl.commands.server.AfkMeAdminCommand;
 import com.sakuraryoko.afkme.impl.commands.server.AfkMeCommand;
 import com.sakuraryoko.corelib.impl.commands.CommandManager;
 
@@ -30,6 +31,7 @@ public class CommandRegister
 {
     public static void register()
     {
+        CommandManager.getInstance().registerCommandHandler(new AfkMeAdminCommand());
         CommandManager.getInstance().registerCommandHandler(new AfkMeCommand());
     }
 }
