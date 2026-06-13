@@ -41,7 +41,7 @@ public record ShadowEntryHandler(ShadowEntry entry)
     @ApiStatus.Internal
     public void registerShadowAfk(@Nonnull ShadowServerPlayer player, int time, String reason)
     {
-        if (this.entry.shadowEnabled())
+        if (this.entry().shadowEnabled())
         {
             return;
         }
@@ -54,27 +54,35 @@ public record ShadowEntryHandler(ShadowEntry entry)
             shadowTimeout = (time * 60L) * 1000L;
         }
 
-        this.entry.setShadowPlayer(player);
-        this.entry.setShadowTimeout(shadowTimeout);
-
         if (reason == null && ConfigWrap.mess().defaultShadowReason == null)
         {
-            this.entry.setReason("§cnone");
+            this.entry().setReason("§cnone");
+            String mess1 = this.entry().name().getString()
+                    + ConfigWrap.mess().shadowStarted;
+            Component mess2 = InitWrap.text().formatTextSafe(mess1);
+            this.sendMessage(mess2);
         }
         else if (reason == null || reason.isEmpty())
         {
-            this.entry.setReason("§cnone");
-            Component mess = InitWrap.text().formatTextSafe(ConfigWrap.mess().shadowStarted);
-            this.sendMessage(mess);
+            this.entry().setReason("§cnone");
+            String mess1 = this.entry().name().getString()
+                    + ConfigWrap.mess().shadowStarted;
+            Component mess2 = InitWrap.text().formatTextSafe(mess1);
+            this.sendMessage(mess2);
         }
         else
         {
-            this.entry.setReason(reason);
-            String mess1 = ConfigWrap.mess().shadowStarted + ConfigWrap.mess().shadowPunctuation + reason;
+            this.entry().setReason(reason);
+            String mess1 = this.entry().name().getString()
+                    + ConfigWrap.mess().shadowStarted
+                    + ConfigWrap.mess().shadowPunctuation
+                    + reason;
             Component mess2 = InitWrap.text().formatTextSafe(mess1);
             this.sendMessage(mess2);
         }
 
+        this.entry().setShadowPlayer(player);
+        this.entry().setShadowTimeout(shadowTimeout);
 //        this.updatePlayerList();
     }
 
@@ -83,9 +91,10 @@ public record ShadowEntryHandler(ShadowEntry entry)
     {
         if (ConfigWrap.mess().displayDuration)
         {
-            String ret = ConfigWrap.mess().shadowReturned
+            String ret = this.entry().name().getString()
+                    + ConfigWrap.mess().shadowReturned
                     + ConfigWrap.mess().whenReturnDurationPrefix
-                    + this.entry.getShadowDurationString()
+                    + this.entry().getShadowDurationString()
                     + ConfigWrap.mess().whenReturnDurationSuffix + "§r";
 
             Component mess = InitWrap.text().formatTextSafe(ret);
@@ -93,12 +102,12 @@ public record ShadowEntryHandler(ShadowEntry entry)
         }
         else
         {
-            String ret = ConfigWrap.mess().shadowReturned + "§r";
+            String ret = this.entry().name().getString() + ConfigWrap.mess().shadowReturned + "§r";
             Component mess = InitWrap.text().formatTextSafe(ret);
             this.sendMessage(mess);
         }
 
-        this.entry.clearShadow();
+        this.entry().clearShadow();
     }
 
     private void sendMessage(Component message)
@@ -118,7 +127,7 @@ public record ShadowEntryHandler(ShadowEntry entry)
 
     private IPlayerInvoker invoker()
     {
-        return (IPlayerInvoker) this.entry.player();
+        return (IPlayerInvoker) this.entry().player();
     }
 
     public void reset()

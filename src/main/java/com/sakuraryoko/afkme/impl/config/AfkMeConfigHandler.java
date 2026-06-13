@@ -102,38 +102,7 @@ public class AfkMeConfigHandler implements IConfigDispatch
     @Override
     public void initConfig()
     {
-        // Check for "configs/afkplus.json" -> Move to "configs/afkplus/afkplus.json"
-        this.checkForRootConfig();
-    }
-
-    private void checkForRootConfig()
-    {
-        try
-        {
-            Path dir = Reference.CONFIG_DIR.resolve(Reference.MOD_ID);
-
-            // json file found in the afkplus subfolder instead of the root
-            if (Files.isDirectory(dir))
-            {
-                AfkMe.LOGGER.warn("checkForRootConfig(): Found Sub Config dir [{}]", dir.getFileName().toString());
-
-                Path oldFile = dir.resolve(this.getConfigName() + ".json");
-
-                if (Files.exists(oldFile))
-                {
-                    Path newFile = Reference.CONFIG_DIR.resolve(Reference.MOD_ID +".json");
-                    // Move the file
-                    AfkMe.LOGGER.warn("checkForRootConfig(): Moving Root Config file [{}/{}] to [{}] ...", dir.getFileName().toString(), oldFile.getFileName().toString(), newFile.getFileName().toString());
-                    Files.move(oldFile, newFile);
-                }
-
-                Files.delete(dir);
-            }
-        }
-        catch (Exception err)
-        {
-            AfkMe.LOGGER.error("checkForRootConfig(): Error moving Root Config file // {}", err.getMessage());
-        }
+        // NO-OP
     }
 
     @Override

@@ -32,7 +32,6 @@ public class MainOptions implements IConfigOption
     public int defaultShadowTimeout;
     public int afkMeCommandPermissions;
 
-
     public MainOptions()
     {
         this.defaults();

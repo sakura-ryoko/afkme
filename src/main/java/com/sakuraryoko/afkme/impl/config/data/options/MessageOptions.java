@@ -43,6 +43,11 @@ public class MessageOptions implements IConfigOption
 	public DurationOption duration;
 	public TimeDateOption timeDate;
 
+	public MessageOptions()
+	{
+		this.defaults();
+	}
+
 	@Override
 	public void defaults()
 	{

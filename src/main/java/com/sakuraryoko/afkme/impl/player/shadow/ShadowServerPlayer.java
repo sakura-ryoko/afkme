@@ -170,6 +170,7 @@ public class ShadowServerPlayer extends ServerPlayer
 		entry.setShadowPlayer(shadow);
 		ShadowState state = new ShadowState(true, time, reason);
 		PlayerManager.getInstance().setShadowState(profile, state);
+		ShadowEntryList.getInstance().updateShadow(shadow);
 
 		return shadow;
 	}
