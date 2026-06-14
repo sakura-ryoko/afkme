@@ -170,7 +170,7 @@ public class ShadowEntry
 		if (this.shadowStartTimeEpoch > 1L)
 		{
 			String result = this.getShadowStartTimeEpochString();
-			return "§9" + result + "§r";
+			return "§a" + result + "§r";
 		}
 
 		return "§eN/A§r";
@@ -205,7 +205,7 @@ public class ShadowEntry
 			return "§e<empty>";
 		}
 
-		return "§d"+this.reason()+"§r";
+		return "§e"+this.reason()+"§r";
 	}
 
 	@ApiStatus.Internal
@@ -312,28 +312,32 @@ public class ShadowEntry
 		text.append(
 				InitWrap.text().formatText("§r\n - §7Shadow: ")
 		).append(
-				InitWrap.text().formatText(this.shadowEnabled ? "§cEnabled" : "§aDisabled")
+				InitWrap.text().formatText(this.shadowEnabled() ? "§6Enabled" : "§aDisabled")
 		);
-		text.append(
-				InitWrap.text().formatText("§r\n - §7Timeout: ")
-		).append(
-				InitWrap.text().formatText(this.getShadowTimeoutFormatted())
-		);
-		text.append(
-				InitWrap.text().formatText("§r\n - §7Duration: ")
-		).append(
-				InitWrap.text().formatText(this.getShadowDurationFormatted())
-		);
-		text.append(
-				InitWrap.text().formatText("§r\n - §7Since: ")
-		).append(
-				InitWrap.text().formatText(this.getShadowStartTimeEpochFormatted())
-		);
-		text.append(
-				InitWrap.text().formatText("§r\n - §7Reason: ")
-		).append(
-				InitWrap.text().formatText(this.getReasonFormatted())
-		);
+
+		if (this.shadowEnabled())
+		{
+			text.append(
+					InitWrap.text().formatText("§r\n - §7Timeout: ")
+			).append(
+					InitWrap.text().formatText(this.getShadowTimeoutFormatted())
+			);
+			text.append(
+					InitWrap.text().formatText("§r\n - §7Duration: ")
+			).append(
+					InitWrap.text().formatText(this.getShadowDurationFormatted())
+			);
+			text.append(
+					InitWrap.text().formatText("§r\n - §7Since: ")
+			).append(
+					InitWrap.text().formatText(this.getShadowStartTimeEpochFormatted())
+			);
+			text.append(
+					InitWrap.text().formatText("§r\n - §7Reason: ")
+			).append(
+					InitWrap.text().formatText(this.getReasonFormatted())
+			);
+		}
 
 		return text;
 	}

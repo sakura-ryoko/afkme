@@ -105,10 +105,6 @@ public record PlayerEntry(UUID uuid, String name, ShadowState state, PosState po
 		).append(
 				InitWrap.text().formatText(this.uuid().toString())
 		).append(
-				InitWrap.text().formatText("\n - §7Shadow: ")
-		).append(
-				this.state().getDebugFormatted()
-		).append(
 				InitWrap.text().formatText("\n - §7Game: ")
 		).append(
 				this.game().getDebugFormatted()
@@ -116,6 +112,10 @@ public record PlayerEntry(UUID uuid, String name, ShadowState state, PosState po
 				InitWrap.text().formatText("\n - §7Position: ")
 		).append(
 				this.pos().getDebugFormatted()
+		).append(
+				InitWrap.text().formatText("\n - §7Shadow: ")
+		).append(
+				this.state().getDebugFormatted()
 		);
 
 		return text;

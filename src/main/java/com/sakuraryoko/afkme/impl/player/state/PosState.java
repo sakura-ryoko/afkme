@@ -78,9 +78,9 @@ public record PosState(String location, int x, int y, int z, float yaw, float pi
 		MutableComponent text = Component.literal("");
 
 		text.append(
-				InitWrap.text().formatText("§b")
-		).append(
-				InitWrap.text().formatText(this.location())
+				InitWrap.text().formatText(
+						String.format("§b%s§r", this.location())
+				)
 		).append(
 				InitWrap.text().formatText("§f [")
 		).append(
@@ -93,10 +93,8 @@ public record PosState(String location, int x, int y, int z, float yaw, float pi
 				)
         ).append(
 				InitWrap.text().formatText(
-						String.format("%d]", this.z())
+						String.format("%d]§r", this.z())
 				)
-		).append(
-				InitWrap.text().formatText("§r")
 		);
 
 		return text;

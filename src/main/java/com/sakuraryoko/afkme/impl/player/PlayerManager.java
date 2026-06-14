@@ -552,4 +552,24 @@ public class PlayerManager
 			ConfigManager.getInstance().saveEach(AfkMeConfigHandler.getInstance());
 		}
 	}
+
+	@ApiStatus.Internal
+	public void onServerResync(@Nonnull MinecraftServer server)
+	{
+		// Same as stop, really; just with a different message
+		if (ConfigWrap.mainOpt().debugMode)
+		{
+			AfkMe.LOGGER.warn("onServerResync --> syncConfig()");
+		}
+
+		if (this.syncConfig(server, true))
+		{
+			if (ConfigWrap.mainOpt().debugMode)
+			{
+				AfkMe.LOGGER.warn("onServerResync(): flushing changes ...");
+			}
+
+			ConfigManager.getInstance().saveEach(AfkMeConfigHandler.getInstance());
+		}
+	}
 }

@@ -96,6 +96,10 @@ public class AfkMeAdminCommand implements IServerCommand
                                                     )
                                       )
                         )
+                        .then(literal("purge")
+                                      .requires(PermsWrap.check(this.getNode()+".purge", 4))
+                                      .executes(this::purgePlayers)
+                        )
         );
     }
 
@@ -263,11 +267,11 @@ public class AfkMeAdminCommand implements IServerCommand
         MutableComponent text = Component.literal("");
 
         text.append(
-                InitWrap.text().formatText("§7Player Info: ")
+                InitWrap.text().formatText("§9Player Info: ")
         ).append(
                 PlayerManager.getInstance().getDebugFormatted(player.getUUID())
         ).append(
-                InitWrap.text().formatText("\n§7Shadow Info: ")
+                InitWrap.text().formatText("\n§9Shadow Info: ")
         ).append(
                 ShadowEntryList.getInstance().getDebugFormatted(player.getUUID())
         );
@@ -276,6 +280,44 @@ public class AfkMeAdminCommand implements IServerCommand
         //$$ ctx.getSource().sendSuccess(() -> text, false);
         //#else
         ctx.getSource().sendSuccess(text, false);
+        //#endif
+
+        return 1;
+    }
+
+    private int purgePlayers(CommandContext<CommandSourceStack> ctx)
+    {
+        ServerPlayer player = ctx.getSource().getPlayer();
+        ImmutableMap<UUID, PlayerEntry> map = PlayerManager.getInstance().getPlayerMap();
+        int count = 0;
+
+        for (UUID uuid : map.keySet())
+        {
+            if (player != null)
+            {
+                if (!uuid.equals(player.getUUID()))
+                {
+                    PlayerManager.getInstance().remove(uuid);
+                    count++;
+                }
+            }
+            else
+            {
+                // Via console command, probably.
+                PlayerManager.getInstance().remove(uuid);
+                count++;
+            }
+        }
+
+        // Resync
+        PlayerManager.getInstance().onServerResync(ctx.getSource().getServer());
+        map = PlayerManager.getInstance().getPlayerMap();
+        String result = String.format("§ePurged: §c%d §eplayers, and then resynced §a%d §ecurrent players§r", count, map.size());
+
+        //#if MC >= 1.20.1
+        //$$ ctx.getSource().sendSuccess(() -> InitWrap.text().formatText(result), false);
+        //#else
+        ctx.getSource().sendSuccess(InitWrap.text().formatText(result), false);
         //#endif
 
         return 1;

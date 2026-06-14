@@ -61,6 +61,7 @@ public class PendingShadowSpawns
 		{
 			PlayerOptions opts = this.pendingSpawnsList.removeFirst();
 			opts.state = opts.state.ensureValid();
+
 			ShadowServerPlayer.createShadowFromConfig(server, opts);
 
 			if (this.pendingSpawnsList.isEmpty())

@@ -35,12 +35,7 @@ import com.sakuraryoko.afkme.impl.events.ServerEventsHandler;
 @Mixin(value = MinecraftServer.class)
 public class MixinMinecraftServer
 {
-	@Inject(method = "tickChildren",
-	        at = @At(value = "INVOKE",
-	                 target = "Lnet/minecraft/util/profiling/ProfilerFiller;popPush(Ljava/lang/String;)V",
-	                 ordinal = 1
-	        )
-	)
+	@Inject(method = "tickServer", at = @At(value = "TAIL"))
 	private void afkme$onServerTick(BooleanSupplier hasTimeLeft, CallbackInfo ci)
 	{
 		ServerEventsHandler.getInstance().onTick((MinecraftServer) (Object) this);

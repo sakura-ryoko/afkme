@@ -297,7 +297,17 @@ public class ShadowServerPlayer extends ServerPlayer
 		shadow.maxUpStep = 0.6f;
 		//#endif
 		shadow.entityData.set(DATA_PLAYER_MODE_CUSTOMISATION, (byte) 0x7f);
-		shadow.getAbilities().flying = game.flying();
+
+		if (gameType.isSurvival())
+		{
+			// Survival players shouldn't be able to fly, or be invulnerable.
+			shadow.getAbilities().flying = false;
+			shadow.setInvulnerable(false);
+		}
+		else
+		{
+			shadow.getAbilities().flying = game.flying();
+		}
 
 		shadow.timeout = state.timeout();
 		shadow.freshPlayer = true;
@@ -367,7 +377,17 @@ public class ShadowServerPlayer extends ServerPlayer
 		shadow.maxUpStep = 0.6f;
 		//#endif
 		shadow.entityData.set(DATA_PLAYER_MODE_CUSTOMISATION, player.getEntityData().get(DATA_PLAYER_MODE_CUSTOMISATION));
-		shadow.getAbilities().flying = player.getAbilities().flying;
+
+		if (shadow.gameMode.isSurvival())
+		{
+			// Survival players shouldn't be able to fly, or be invulnerable.
+			shadow.getAbilities().flying = false;
+			shadow.setInvulnerable(false);
+		}
+		else
+		{
+			shadow.getAbilities().flying = player.getAbilities().flying;
+		}
 
 		if (time <= 0)
 		{
@@ -504,6 +524,7 @@ public class ShadowServerPlayer extends ServerPlayer
 	public void kill(Component message)
 	{
 		this.dismount();
+		this.killShadow();
 		//#if MC >= 1.21.2
 		//$$ if (message.getContents() instanceof TranslatableContents text && text.getKey().equals("multiplayer.disconnect.duplicate_login"))
 		//$$ {

@@ -58,17 +58,17 @@ public record GameState(String gameMode, boolean flying)
 		MutableComponent text = Component.literal("");
 
 		text.append(
-				InitWrap.text().formatText("§r §b")
+				InitWrap.text().formatText("§r ")
 		).append(
-				InitWrap.text().formatText(this.gameMode())
+				InitWrap.text().formatText(
+						String.format("§b%s§r", this.gameMode())
+				)
 		).append(
-				InitWrap.text().formatText("§r / F: ")
+				InitWrap.text().formatText(" / F: ")
 		).append(
 				InitWrap.text().formatText(
 						String.format("§e%s§r", this.flying())
 				)
-		).append(
-				InitWrap.text().formatText("§r")
 		);
 
 		return text;
