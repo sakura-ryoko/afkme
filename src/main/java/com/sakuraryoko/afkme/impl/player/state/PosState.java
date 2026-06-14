@@ -20,11 +20,13 @@
 
 package com.sakuraryoko.afkme.impl.player.state;
 
+import javax.annotation.Nonnull;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.level.ServerPlayer;
 
 import com.sakuraryoko.afkme.impl.modinit.InitWrap;
 
@@ -63,6 +65,12 @@ public record PosState(String location, int x, int y, int z, float yaw, float pi
 		result = 31 * result + Float.floatToIntBits(this.yaw());
 		result = 31 * result + Float.floatToIntBits(this.pitch());
 		return result;
+	}
+
+	public boolean matches(@Nonnull ServerPlayer player)
+	{
+		PosState os = PosWrap.of(player);
+		return this.equals(os);
 	}
 
 	public Component getDebugFormatted()

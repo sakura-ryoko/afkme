@@ -48,6 +48,7 @@ import com.mojang.authlib.GameProfile;
 //#endif
 //#if MC >= 1.21.10
 //$$ import net.minecraft.core.UUIDUtil;
+//$$ import net.minecraft.server.players.NameAndId;
 //$$ import net.minecraft.server.players.OldUsersConverter;
 //$$ import net.minecraft.world.item.component.ResolvableProfile;
 //$$ import net.minecraft.world.level.storage.TagValueInput;
@@ -91,6 +92,7 @@ import net.minecraft.world.level.block.entity.SkullBlockEntity;
 //#if MC >= 1.21.10
 //$$ import com.sakuraryoko.afkme.impl.Reference;
 //#endif
+import com.sakuraryoko.afkme.impl.AfkMe;
 import com.sakuraryoko.afkme.impl.config.ConfigWrap;
 import com.sakuraryoko.afkme.impl.config.data.options.PlayerOptions;
 import com.sakuraryoko.afkme.impl.player.*;
@@ -103,6 +105,7 @@ import com.sakuraryoko.corelib.impl.text.BuiltinTextHandler;
 @SuppressWarnings("EntityConstructor")
 public class ShadowServerPlayer extends ServerPlayer
 {
+	public Runnable startingPosition = () -> {};
 	private boolean freshPlayer;
 	private long freshHoldTime;
 	private long timeout = -1L;
@@ -199,6 +202,21 @@ public class ShadowServerPlayer extends ServerPlayer
 		//#endif
 
 		//#if MC >= 1.21.10
+		//$$ if (server.getPlayerList().getBans().isBanned(new NameAndId(profile)))
+		//#else
+		if (server.getPlayerList().getBans().isBanned(profile))
+		//#endif
+		{
+			if (ConfigWrap.mainOpt().debugMode)
+			{
+				AfkMe.LOGGER.warn("createShadowFromConfig: Blocking banned player: ['{}'/{}]", name, uuid.toString());
+			}
+
+			PlayerManager.getInstance().remove(uuid);
+			return;
+		}
+
+		//#if MC >= 1.21.10
 		//$$ server.services().nameToIdCache().resolveOfflineUsers(server.isDedicatedServer() && server.usesAuthentication());
 		//$$ fetchGameProfile(server, profile.id()).whenCompleteAsync((p, throwable) ->
 		//$$ {
@@ -248,6 +266,12 @@ public class ShadowServerPlayer extends ServerPlayer
 		//$$ ShadowServerPlayer shadow = new ShadowServerPlayer(server, level, profile);
 		//#else
 		ShadowServerPlayer shadow = new ShadowServerPlayer(server, level, profile, null);
+		//#endif
+
+		//#if MC >= 1.21.10
+		//$$ shadow.startingPosition = () -> shadow.snapTo(pos.x(), pos.y(), pos.z(), pos.yaw(), pos.pitch());
+		//#else
+		shadow.startingPosition = () -> shadow.moveTo(pos.x(), pos.y(), pos.z(), pos.yaw(), pos.pitch());
 		//#endif
 
 		//#if MC >= 1.20.6
@@ -597,10 +621,7 @@ public class ShadowServerPlayer extends ServerPlayer
 
 				Component reason = BuiltinTextHandler.getInstance().formatTextSafe(mess);
 				this.kill(reason);
-
-				server.getPlayerList().remove(this);
-				ShadowEntryList.getInstance().remove(this);
-				PlayerManager.getInstance().setShadowState(this.getGameProfile(), ShadowState.DEFAULT);
+				this.killShadow();
 			}
 		}
 	}
@@ -618,12 +639,17 @@ public class ShadowServerPlayer extends ServerPlayer
 		}
 		else
 		{
-			ShadowEntryList.getInstance().remove(this);
-			PlayerManager.getInstance().updatePlayerData(this);
-			PlayerManager.getInstance().resetShadowState(this);
+			this.killShadow();
 		}
 
 		this.kill(this.getCombatTracker().getDeathMessage());
+	}
+
+	public void killShadow()
+	{
+		ShadowEntryList.getInstance().remove(this);
+		PlayerManager.getInstance().updatePlayerData(this);
+		PlayerManager.getInstance().resetShadowState(this);
 	}
 
 	private void dismount()

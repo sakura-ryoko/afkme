@@ -92,4 +92,27 @@ public record ShadowState(boolean enabled, int time, long timeout, String reason
 
 		return text;
 	}
+
+	// Fix stupid crashes from people editing the file
+	public ShadowState ensureValid()
+	{
+		if (this.enabled)
+		{
+			int time = this.time;
+			long timeout = this.timeout;
+
+			if (time <= 0)
+			{
+				time = 5;
+			}
+			if (timeout <= 0)
+			{
+				timeout = (time * 60L) * 1000L;
+			}
+
+			return new ShadowState(true, time, timeout, this.reason);
+		}
+
+		return this;
+	}
 }

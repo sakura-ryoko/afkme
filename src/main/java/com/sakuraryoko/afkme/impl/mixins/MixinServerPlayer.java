@@ -32,7 +32,11 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.sakuraryoko.afkme.impl.events.PlayerEventsHandler;
 import com.sakuraryoko.afkme.impl.player.interfaces.IPlayerInvoker;
 
 @Mixin(ServerPlayer.class)
@@ -71,5 +75,11 @@ public abstract class MixinServerPlayer extends Entity implements IPlayerInvoker
 	public ServerGamePacketListenerImpl afkme$connection()
 	{
 		return this.connection;
+	}
+
+	@Inject(method = "tick", at = @At("TAIL"))
+	private void afkme$onPlayerTick(CallbackInfo ci)
+	{
+		PlayerEventsHandler.getInstance().onTick((ServerPlayer) (Object) this);
 	}
 }

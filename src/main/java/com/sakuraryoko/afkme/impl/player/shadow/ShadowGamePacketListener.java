@@ -44,6 +44,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 
+import com.sakuraryoko.afkme.impl.config.ConfigWrap;
+
 @ApiStatus.Internal
 public class ShadowGamePacketListener extends ServerGamePacketListenerImpl
 {
@@ -72,6 +74,13 @@ public class ShadowGamePacketListener extends ServerGamePacketListenerImpl
 			 text.getKey().equals("multiplayer.disconnect.duplicate_login")))
 		{
 			((ShadowServerPlayer) this.player).kill(message);
+		}
+
+		if (!ConfigWrap.mainOpt().resetHealthUponDeath)
+		{
+			ShadowServerPlayer sp = (ShadowServerPlayer) this.player;
+			sp.killShadow();
+			sp.kill(message);
 		}
 	}
 

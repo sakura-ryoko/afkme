@@ -26,7 +26,6 @@ import java.util.UUID;
 import javax.annotation.Nonnull;
 import com.google.common.collect.ImmutableMap;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import com.mojang.authlib.GameProfile;
@@ -61,6 +60,7 @@ public class PlayerManager
 	@ApiStatus.Internal
 	public void syncProfile(GameProfile profile)
 	{
+		if (profile == null) { return; }
 		List<PlayerOptions> config = ConfigWrap.players();
 		UUID uuid = ProfileWrap.id(profile);
 
@@ -79,30 +79,19 @@ public class PlayerManager
 	}
 
 	@ApiStatus.Internal
-	public void syncFromConfig(PlayerOptions opt)
+	public void syncFromConfig(@Nonnull PlayerOptions opt)
 	{
 		this.addOrUpdateProfile(ProfileWrap.profile(opt.uuid, opt.name), opt.state);
 	}
 
 	@ApiStatus.Internal
-	private void addOrUpdateProfile(GameProfile profile, ShadowState state)
+	private void addOrUpdateProfile(@Nonnull GameProfile profile, ShadowState state)
 	{
 		UUID uuid = ProfileWrap.id(profile);
 		String name = ProfileWrap.name(profile);
 		PosState pos = PosWrap.defaultPos();
 		GameState game = GameWrap.defMode();
 		boolean found = false;
-
-//		if (this.playerMap.containsKey(uuid) && this.playerMap.get(uuid) != state)
-//		{
-//			this.playerMap.remove(uuid);
-//			this.playerMap.put(uuid, state);
-//		}
-//		else if (!this.playerMap.containsKey(uuid))
-//		{
-//			this.playerMap.put(uuid, state);
-//			this.checkOrUpdateFromConfig(profile);
-//		}
 
 		for (PlayerEntry entry : this.players)
 		{
@@ -134,7 +123,7 @@ public class PlayerManager
 	}
 
 	@ApiStatus.Internal
-	private void checkOrUpdateFromConfig(GameProfile profile)
+	private void checkOrUpdateFromConfig(@Nonnull GameProfile profile)
 	{
 		List<PlayerOptions> config = new ArrayList<>(ConfigWrap.players());
 		UUID uuid = ProfileWrap.id(profile);
@@ -151,7 +140,7 @@ public class PlayerManager
 	}
 
 	@ApiStatus.Internal
-	private void addConfig(GameProfile profile)
+	private void addConfig(@Nonnull GameProfile profile)
 	{
 		List<PlayerOptions> config = new ArrayList<>(ConfigWrap.players());
 		UUID uuid = ProfileWrap.id(profile);
@@ -169,16 +158,6 @@ public class PlayerManager
 		if (!exists)
 		{
 			PlayerOptions opt = PlayerOptions.fromProfile(profile, ShadowState.DEFAULT);
-
-//			if (this.posMap.containsKey(uuid))
-//			{
-//				opt.pos = this.posMap.get(uuid);
-//			}
-//
-//			if (this.gameMap.containsKey(uuid))
-//			{
-//				opt.game = this.gameMap.get(uuid);
-//			}
 
 			for (PlayerEntry entry : this.players)
 			{
@@ -200,7 +179,7 @@ public class PlayerManager
 	}
 
 	@ApiStatus.Internal
-	private void setConfig(GameProfile profile, ShadowState state)
+	private void setConfig(@Nonnull GameProfile profile, ShadowState state)
 	{
 		List<PlayerOptions> config = new ArrayList<>(ConfigWrap.players());
 		UUID uuid = ProfileWrap.id(profile);
@@ -213,16 +192,6 @@ public class PlayerManager
 			{
 				entry.state = state;
 				entry.name = ProfileWrap.name(profile);
-
-//				if (this.posMap.containsKey(uuid))
-//				{
-//					entry.pos = this.posMap.get(uuid);
-//				}
-//
-//				if (this.gameMap.containsKey(uuid))
-//				{
-//					entry.game = this.gameMap.get(uuid);
-//				}
 
 				for (PlayerEntry playerEntry : this.players)
 				{
@@ -246,21 +215,6 @@ public class PlayerManager
 			{
 				PlayerOptions opt = new PlayerOptions(entry);
 
-//				if (this.nameMap.containsKey(uuid))
-//				{
-//					opt.name = this.nameMap.get(uuid);
-//				}
-//
-//				if (this.posMap.containsKey(uuid))
-//				{
-//					opt.pos = this.posMap.get(uuid);
-//				}
-//
-//				if (this.gameMap.containsKey(uuid))
-//				{
-//					opt.game = this.gameMap.get(uuid);
-//				}
-
 				for (PlayerEntry playerEntry : this.players)
 				{
 					if (playerEntry.matches(uuid))
@@ -276,14 +230,9 @@ public class PlayerManager
 		}
 	}
 
-	public ShadowState getShadowState(@NotNull GameProfile profile)
+	public ShadowState getShadowState(@Nonnull GameProfile profile)
 	{
 		UUID uuid = ProfileWrap.id(profile);
-
-//		if (this.playerMap.containsKey(uuid))
-//		{
-//			return this.playerMap.get(uuid);
-//		}
 
 		for (PlayerEntry entry : this.players)
 		{
@@ -300,13 +249,8 @@ public class PlayerManager
 	}
 
 	@ApiStatus.Internal
-	public ShadowState getShadowState(@NotNull UUID uuid)
+	public ShadowState getShadowState(@Nonnull UUID uuid)
 	{
-//		if (this.playerMap.containsKey(uuid))
-//		{
-//			return this.playerMap.get(uuid);
-//		}
-
 		for (PlayerEntry entry : this.players)
 		{
 			if (entry.matches(uuid))
@@ -315,12 +259,11 @@ public class PlayerManager
 			}
 		}
 
-//		this.playerMap.put(uuid, ShadowState.DEFAULT);
 		return ShadowState.DEFAULT;
 	}
 
 	@ApiStatus.Internal
-	public void setShadowState(@NotNull GameProfile profile, ShadowState state)
+	public void setShadowState(@Nonnull GameProfile profile, ShadowState state)
 	{
 		this.addOrUpdateProfile(profile, state);
 		this.setConfig(profile, state);
@@ -337,13 +280,15 @@ public class PlayerManager
 		this.setShadowState(player.getGameProfile(), ShadowState.DEFAULT);
 	}
 
-	public PosState getPosState(@NotNull UUID uuid)
+	public void remove(@Nonnull UUID uuid)
 	{
-//		if (this.posMap.containsKey(uuid))
-//		{
-//			return this.posMap.get(uuid);
-//		}
+		ShadowEntryList.getInstance().remove(uuid);
+		this.players.removeIf(entry -> entry.matches(uuid));
+		ConfigWrap.players().removeIf(opt -> opt.uuid.equals(uuid));
+	}
 
+	public PosState getPosState(@Nonnull UUID uuid)
+	{
 		for (PlayerEntry entry : this.players)
 		{
 			if (entry.matches(uuid))
@@ -365,13 +310,8 @@ public class PlayerManager
 		return PosWrap.defaultPos();
 	}
 
-	public GameState getGameMode(@NotNull UUID uuid)
+	public GameState getGameMode(@Nonnull UUID uuid)
 	{
-//		if (this.gameMap.containsKey(uuid))
-//		{
-//			return this.gameMap.get(uuid);
-//		}
-
 		for (PlayerEntry entry : this.players)
 		{
 			if (entry.matches(uuid))
@@ -399,9 +339,6 @@ public class PlayerManager
 		PosState pos = PosWrap.of(player);
 		GameState game = GameWrap.of(player);
 		UUID uuid = player.getUUID();
-//		this.nameMap.put(uuid, player.getName().getString());
-//		this.posMap.put(uuid, pos);
-//		this.gameMap.put(uuid, game);
 
 		for (PlayerEntry entry : this.players)
 		{
@@ -479,10 +416,10 @@ public class PlayerManager
 			{
 				if (ConfigWrap.mainOpt().debugMode)
 				{
-					AfkMe.LOGGER.warn("syncConfig: Spawning Shadow player: ['{}'/{}]", entry.name, entry.uuid.toString());
+					AfkMe.LOGGER.warn("syncConfig: Scheduling Shadow player: ['{}'/{}]", entry.name, entry.uuid.toString());
 				}
 
-				ShadowServerPlayer.createShadowFromConfig(server, entry);
+				PendingShadowSpawns.INSTANCE.scheduleSpawn(entry);
 			}
 		}
 
@@ -498,7 +435,7 @@ public class PlayerManager
 		UUID uuid = player.getUUID();
 		PosState pos = PosWrap.of(player);
 		GameState game = GameWrap.of(player);
-		ShadowState state = this.getShadowState(uuid);
+		ShadowState state = this.getShadowState(uuid).ensureValid();
 
 		if (player instanceof ShadowServerPlayer shadow)
 		{

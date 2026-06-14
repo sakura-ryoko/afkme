@@ -92,6 +92,19 @@ public class ShadowEntryList
 		}
 	}
 
+	public void remove(@Nonnull UUID uuid)
+	{
+		for (ShadowEntry entry : this.list)
+		{
+			if (entry.matches(uuid))
+			{
+				this.list.remove(entry);
+				entry.handler().unregisterShadowAfk();
+				break;
+			}
+		}
+	}
+
 	public void remove(@Nonnull ShadowServerPlayer player)
 	{
 		for (ShadowEntry entry : this.list)

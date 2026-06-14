@@ -33,14 +33,26 @@ import net.minecraft.server.level.ServerPlayer;
 //#if MC >= 1.20.2
 //$$ import net.minecraft.server.level.ClientInformation;
 //$$ import net.minecraft.server.network.CommonListenerCookie;
+//#else
+import net.minecraft.world.entity.player.ProfilePublicKey;
 //#endif
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.server.players.PlayerList;
-import net.minecraft.world.entity.player.ProfilePublicKey;
+//#if MC >= 1.21.10
+//#elseif MC >= 1.21.6
+//$$ import net.minecraft.util.ProblemReporter;
+//#endif
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+//#if MC >= 1.21.10
+//$$ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+//#else
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import net.minecraft.nbt.CompoundTag;
+//#endif
 
 import com.sakuraryoko.afkme.impl.player.PlayerManager;
 import com.sakuraryoko.afkme.impl.player.ShadowEntry;
@@ -55,14 +67,24 @@ public abstract class MixinPlayerList
 {
 	@Shadow @Final private MinecraftServer server;
 
-//	@Inject(method = "load", at = @At("RETURN"))
-//	private void afkme$onLoad(ServerPlayer player, CallbackInfoReturnable<CompoundTag> cir)
-//	{
-//		if (player instanceof ShadowServerPlayer)
-//		{
-//			// fix Starting position
-//		}
-//	}
+	//#if MC >= 1.21.10
+	//$$ @Inject(method = "placeNewPlayer",
+		//$$ at = @At(value = "INVOKE",
+			//$$ target = "Lnet/minecraft/server/level/ServerPlayer;level()Lnet/minecraft/server/level/ServerLevel;"))
+	//$$ private void afkme$onLoad(Connection connection, ServerPlayer player, CommonListenerCookie cookie, CallbackInfo ci)
+	//#elseif MC >= 1.21.6
+	//$$ @Inject(method = "load", at = @At(value = "RETURN", shift = At.Shift.BEFORE))
+	//$$ private void afkme$onLoad(ServerPlayer player, ProblemReporter problemReporter, CallbackInfoReturnable<CompoundTag> cir)
+	//#else
+	@Inject(method = "load", at = @At(value = "RETURN", shift = At.Shift.BEFORE))
+	private void afkme$onLoad(ServerPlayer player, CallbackInfoReturnable<CompoundTag> cir)
+	//#endif
+	{
+		if (player instanceof ShadowServerPlayer sp)
+		{
+			sp.startingPosition.run();
+		}
+	}
 
 	@WrapOperation(method = "placeNewPlayer",
 	          at = @At(value = "NEW",

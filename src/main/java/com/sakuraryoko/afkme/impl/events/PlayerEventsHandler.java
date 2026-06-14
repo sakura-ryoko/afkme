@@ -31,6 +31,7 @@ import net.minecraft.server.level.ServerPlayer;
 
 import com.sakuraryoko.afkme.impl.player.PlayerManager;
 import com.sakuraryoko.afkme.impl.player.shadow.ShadowServerPlayer;
+import com.sakuraryoko.afkme.impl.player.state.PosState;
 import com.sakuraryoko.corelib.api.events.IPlayerEventsDispatch;
 
 @ApiStatus.Internal
@@ -62,7 +63,7 @@ public class PlayerEventsHandler implements IPlayerEventsDispatch
 	@Override
 	public void onPlayerJoinPost(ServerPlayer player, Connection connection)
 	{
-		// TODO
+		PlayerManager.getInstance().updatePlayerData(player);
 	}
 
 	@Override
@@ -78,6 +79,13 @@ public class PlayerEventsHandler implements IPlayerEventsDispatch
 	{
 		PlayerManager.getInstance().updatePlayerData(player);
 		PlayerManager.getInstance().syncProfile(player.getGameProfile());
+	}
+
+	public void onTick(ServerPlayer player)
+	{
+		PosState pos = PlayerManager.getInstance().getPosState(player.getUUID());
+		if (pos.matches(player)) { return; }
+		PlayerManager.getInstance().updatePlayerData(player);
 	}
 
 	@Override

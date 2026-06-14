@@ -29,6 +29,7 @@ import net.minecraft.server.dedicated.DedicatedServer;
 import net.minecraft.world.level.GameType;
 
 import com.sakuraryoko.afkme.impl.player.PlayerManager;
+import com.sakuraryoko.afkme.impl.player.PendingShadowSpawns;
 import com.sakuraryoko.corelib.api.events.IServerEventsDispatch;
 
 @ApiStatus.Internal
@@ -71,6 +72,11 @@ public class ServerEventsHandler implements IServerEventsDispatch
 	public void onOpenToLan(IntegratedServer server, GameType mode)
 	{
 		// TODO
+	}
+
+	public void onTick(MinecraftServer server)
+	{
+		PendingShadowSpawns.INSTANCE.tick(server);
 	}
 
 	@Override
