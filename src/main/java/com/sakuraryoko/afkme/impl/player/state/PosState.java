@@ -18,9 +18,9 @@
  * along with AfkMe.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.sakuraryoko.afkme.impl.player;
+package com.sakuraryoko.afkme.impl.player.state;
 
-import java.util.Objects;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 
 import net.minecraft.network.chat.Component;
@@ -28,12 +28,13 @@ import net.minecraft.network.chat.MutableComponent;
 
 import com.sakuraryoko.afkme.impl.modinit.InitWrap;
 
-public record GameState(String gameMode, boolean flying)
+@ApiStatus.Internal
+public record PosState(String location, int x, int y, int z, float yaw, float pitch)
 {
 	@Override
 	public @NonNull String toString()
 	{
-		return "gameType="+this.gameMode+",flying="+this.flying;
+		return "dim="+this.location()+", [x="+this.x()+",y="+this.y()+",z="+this.z()+",yaw="+this.yaw()+",pitch="+this.pitch()+"]";
 	}
 
 	@Override
@@ -41,14 +42,27 @@ public record GameState(String gameMode, boolean flying)
 	{
 		if (this == o) { return true; }
 		if (o == null || getClass() != o.getClass()) { return false; }
-		GameState gameState = (GameState) o;
-		return Objects.equals(this.gameMode, gameState.gameMode) && this.flying == gameState.flying;
+		PosState posState = (PosState) o;
+
+		if (this.location().equals(posState.location()))
+		{
+			return  this.x() == posState.x() && this.y() == posState.y() && this.z() == posState.z() &&
+					this.yaw() == posState.yaw() && this.pitch() == posState.pitch();
+		}
+
+		return false;
 	}
 
 	@Override
 	public int hashCode()
 	{
-		return Objects.hash(this.gameMode, this.flying);
+		int result = this.location().hashCode();
+		result = 31 * result + this.x();
+		result = 31 * result + this.y();
+		result = 31 * result + this.z();
+		result = 31 * result + Float.floatToIntBits(this.yaw());
+		result = 31 * result + Float.floatToIntBits(this.pitch());
+		return result;
 	}
 
 	public Component getDebugFormatted()
@@ -56,14 +70,22 @@ public record GameState(String gameMode, boolean flying)
 		MutableComponent text = Component.literal("");
 
 		text.append(
-				InitWrap.text().formatText("§rGM: ")
+				InitWrap.text().formatText("§b")
 		).append(
-				InitWrap.text().formatText(this.gameMode())
+				InitWrap.text().formatText(this.location())
 		).append(
-				InitWrap.text().formatText("§r / F: ")
+				InitWrap.text().formatText("§f [")
 		).append(
 				InitWrap.text().formatText(
-						String.format("§e%s§r", this.flying())
+						String.format("%d, ", this.x())
+				)
+		).append(
+				InitWrap.text().formatText(
+						String.format("%d, ", this.y())
+				)
+        ).append(
+				InitWrap.text().formatText(
+						String.format("%d]", this.z())
 				)
 		).append(
 				InitWrap.text().formatText("§r")
@@ -71,5 +93,4 @@ public record GameState(String gameMode, boolean flying)
 
 		return text;
 	}
-
 }

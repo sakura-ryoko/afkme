@@ -25,7 +25,6 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import org.jetbrains.annotations.ApiStatus;
 
-import com.mojang.authlib.GameProfile;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerLoginPacketListenerImpl;
@@ -36,10 +35,12 @@ import org.spongepowered.asm.mixin.injection.At;
 import com.sakuraryoko.afkme.impl.modinit.InitWrap;
 import com.sakuraryoko.afkme.impl.player.*;
 import com.sakuraryoko.afkme.impl.player.shadow.ShadowServerPlayer;
+import com.sakuraryoko.afkme.impl.player.state.*;
 
 //#if MC >= 1.21.10
 //$$ import net.minecraft.server.players.NameAndId;
 //#else
+import com.mojang.authlib.GameProfile;
 //#endif
 
 @Mixin(ServerLoginPacketListenerImpl.class)

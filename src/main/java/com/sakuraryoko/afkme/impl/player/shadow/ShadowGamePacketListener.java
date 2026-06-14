@@ -21,6 +21,7 @@
 package com.sakuraryoko.afkme.impl.player.shadow;
 
 import java.util.Set;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 
 import net.minecraft.network.Connection;
@@ -43,6 +44,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 
+@ApiStatus.Internal
 public class ShadowGamePacketListener extends ServerGamePacketListenerImpl
 {
 	//#if MC >= 1.20.2

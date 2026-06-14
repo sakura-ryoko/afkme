@@ -26,6 +26,7 @@ import com.sakuraryoko.corelib.api.config.IConfigOption;
 import com.sakuraryoko.corelib.api.time.DurationFormat;
 import com.sakuraryoko.corelib.api.time.DurationOption;
 import com.sakuraryoko.corelib.api.time.TimeDateOption;
+import com.sakuraryoko.corelib.api.time.TimeFormat;
 
 @ApiStatus.Internal
 public class MessageOptions implements IConfigOption
@@ -51,7 +52,7 @@ public class MessageOptions implements IConfigOption
 	@Override
 	public void defaults()
 	{
-		this.broadcastMessages = true;
+		this.broadcastMessages = false;
 		this.displayDuration = true;
 		this.defaultShadowReason = "§7shadowing§r";
 		this.shadowKickMessage = "§6Shadow activation§r";
@@ -64,6 +65,7 @@ public class MessageOptions implements IConfigOption
 		this.duration = new DurationOption();
 		this.duration.option = DurationFormat.PRETTY;
 		this.timeDate = new TimeDateOption();
+		this.timeDate.option = TimeFormat.RFC1123;
 	}
 
 	@Override

@@ -21,6 +21,7 @@
 package com.sakuraryoko.afkme.impl.mixins;
 
 import io.netty.channel.Channel;
+import org.jetbrains.annotations.ApiStatus;
 
 import net.minecraft.network.Connection;
 import org.spongepowered.asm.mixin.Mixin;
@@ -29,6 +30,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 import com.sakuraryoko.afkme.impl.player.shadow.IShadowConnection;
 
 @Mixin(Connection.class)
+@ApiStatus.Internal
 public abstract class MixinConnection implements IShadowConnection
 {
 	@Override

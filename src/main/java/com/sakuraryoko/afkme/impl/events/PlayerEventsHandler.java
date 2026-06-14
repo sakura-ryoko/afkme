@@ -30,8 +30,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 import com.sakuraryoko.afkme.impl.player.PlayerManager;
-import com.sakuraryoko.afkme.impl.player.ShadowEntry;
-import com.sakuraryoko.afkme.impl.player.ShadowEntryList;
 import com.sakuraryoko.afkme.impl.player.shadow.ShadowServerPlayer;
 import com.sakuraryoko.corelib.api.events.IPlayerEventsDispatch;
 
@@ -52,7 +50,7 @@ public class PlayerEventsHandler implements IPlayerEventsDispatch
 	{
 		if (player instanceof ShadowServerPlayer) { return; }
 		PlayerManager.getInstance().syncProfile(profile);
-		PlayerManager.getInstance().updatePlayerPosition(player);
+		PlayerManager.getInstance().updatePlayerData(player);
 	}
 
 	@Override
@@ -72,24 +70,14 @@ public class PlayerEventsHandler implements IPlayerEventsDispatch
 	{
 		if (newPlayer instanceof ShadowServerPlayer) { return; }
 		PlayerManager.getInstance().syncProfile(newPlayer.getGameProfile());
-		PlayerManager.getInstance().updatePlayerPosition(newPlayer);
+		PlayerManager.getInstance().updatePlayerData(newPlayer);
 	}
 
 	@Override
 	public void onPlayerLeave(ServerPlayer player)
 	{
-		PlayerManager.getInstance().updatePlayerPosition(player);
+		PlayerManager.getInstance().updatePlayerData(player);
 		PlayerManager.getInstance().syncProfile(player.getGameProfile());
-
-		if (player instanceof ShadowServerPlayer sp)
-		{
-			ShadowEntry entry = ShadowEntryList.getInstance().get(sp);
-
-			if (entry != null && entry.matches(player.getUUID()))
-			{
-				System.out.print("Shadow onPlayerLeave()?\n");
-			}
-		}
 	}
 
 	@Override

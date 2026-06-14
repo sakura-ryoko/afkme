@@ -18,31 +18,46 @@
  * along with AfkMe.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.sakuraryoko.afkme.impl.player;
+package com.sakuraryoko.afkme.impl.player.state;
 
-import javax.annotation.Nonnull;
+import java.util.UUID;
+import org.jetbrains.annotations.ApiStatus;
 
-import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.Level;
+import com.mojang.authlib.GameProfile;
+//#if MC >= 1.21.10
+//$$ import net.minecraft.server.players.NameAndId;
+//#endif
 
-public class PosWrap
+@ApiStatus.Internal
+public class ProfileWrap
 {
-	public static PosState defaultPos()
+	public static UUID id(GameProfile profile)
 	{
-		return new PosState(Level.OVERWORLD.location().toString(), 0, 0, 0, 0f, 0f);
+//#if MC >= 1.21.10
+		//$$ return profile.id();
+//#else
+		return profile.getId();
+//#endif
 	}
 
-	public static PosState of(@Nonnull ServerPlayer player)
+	public static String name(GameProfile profile)
 	{
-		//#if MC >= 1.20.1
-		//$$ ResourceKey<Level> key = player.level().dimension();
-		//#else
-		ResourceKey<Level> key = player.level.dimension();
-		//#endif
-		BlockPos pos = player.blockPosition();
+//#if MC >= 1.21.10
+		//$$ return profile.name();
+//#else
+		return profile.getName();
+//#endif
+	}
 
-		return new PosState(key.location().toString(), pos.getX(), pos.getY(), pos.getZ(), player.getYRot(), player.getXRot());
+	//#if MC >= 1.21.10
+	//$$public static GameProfile profile(NameAndId nameAndId)
+	//$$ {
+		//$$ return new GameProfile(nameAndId.id(), nameAndId.name());
+	//$$ }
+	//#endif
+
+	public static GameProfile profile(UUID id, String name)
+	{
+		return new GameProfile(id, name);
 	}
 }

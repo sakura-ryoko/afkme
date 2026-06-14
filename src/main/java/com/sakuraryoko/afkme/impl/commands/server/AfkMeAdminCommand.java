@@ -43,10 +43,10 @@ import com.sakuraryoko.afkme.impl.commands.PermsWrap;
 import com.sakuraryoko.afkme.impl.config.AfkMeConfigHandler;
 import com.sakuraryoko.afkme.impl.modinit.AfkMeInit;
 import com.sakuraryoko.afkme.impl.modinit.InitWrap;
+import com.sakuraryoko.afkme.impl.player.PlayerEntry;
 import com.sakuraryoko.afkme.impl.player.PlayerManager;
 import com.sakuraryoko.afkme.impl.player.ShadowEntry;
 import com.sakuraryoko.afkme.impl.player.ShadowEntryList;
-import com.sakuraryoko.afkme.impl.player.ShadowState;
 import com.sakuraryoko.corelib.api.commands.IServerCommand;
 import com.sakuraryoko.corelib.api.modinit.ModInitData;
 import com.sakuraryoko.corelib.impl.config.ConfigManager;
@@ -74,7 +74,18 @@ public class AfkMeAdminCommand implements IServerCommand
                         )
                         .then(literal("list")
                                       .requires(PermsWrap.check(this.getNode()+".list", 4))
-                                      .executes(this::list)
+                                      .then(literal("players")
+                                                    .requires(PermsWrap.check(this.getNode()+".list.players", 4))
+                                                    .executes(this::listPlayerMap)
+                                      )
+                                      .then(literal("shadows")
+                                                    .requires(PermsWrap.check(this.getNode()+".list.shadows", 4))
+                                                    .executes(this::listShadowMap)
+                                      )
+                                      .then(literal("all")
+                                                    .requires(PermsWrap.check(this.getNode()+".list.all", 4))
+                                                    .executes(this::listAll)
+                                      )
                         )
                         .then(literal("info")
                                       .requires(PermsWrap.check(this.getNode()+".info", 4))
@@ -149,27 +160,39 @@ public class AfkMeAdminCommand implements IServerCommand
         return 1;
     }
 
-    private int list(CommandContext<CommandSourceStack> ctx)
+    private int listAll(CommandContext<CommandSourceStack> ctx)
     {
-	    ImmutableMap<UUID, ShadowState> playerMap = PlayerManager.getInstance().getPlayerMap();
-        ImmutableList<ShadowEntry> list = ShadowEntryList.getInstance().listCopy();
+        this.listPlayerMap(ctx);
+        this.listShadowMap(ctx);
+
+        return 1;
+    }
+
+    private int listPlayerMap(CommandContext<CommandSourceStack> ctx)
+    {
+        ImmutableMap<UUID, PlayerEntry> playerMap = PlayerManager.getInstance().getPlayerMap();
         MutableComponent text = Component.literal("");
+        int count = 0;
 
         text.append(
                 InitWrap.text().formatText("§dPlayer Map:")
         );
 
-        int count = 0;
-
         for (UUID key : playerMap.keySet())
         {
-            text.append(
-                    InitWrap.text().formatText(
-                            String.format("\n§9[Entry: %02d]", count)
-                    )
-            ).append(
-                    PlayerManager.getInstance().getDebugFormatted(key)
-            );
+            PlayerEntry entry = playerMap.get(key);
+
+            if (entry != null)
+            {
+                text.append(
+                        InitWrap.text().formatText(
+                                String.format("\n§9[Entry: %02d]", count)
+                        )
+                ).append(
+                        entry.getDebugFormatted()
+                );
+            }
+
             count++;
         }
 
@@ -177,7 +200,20 @@ public class AfkMeAdminCommand implements IServerCommand
                 String.format("\n§6(%d total)§r", count)
         );
 
-        count = 0;
+        //#if MC >= 1.20.1
+        //$$ ctx.getSource().sendSuccess(() -> text, false);
+        //#else
+        ctx.getSource().sendSuccess(text, false);
+        //#endif
+
+        return 1;
+    }
+
+    private int listShadowMap(CommandContext<CommandSourceStack> ctx)
+    {
+        ImmutableList<ShadowEntry> list = ShadowEntryList.getInstance().listCopy();
+        MutableComponent text = Component.literal("");
+        int count = 0;
 
         text.append(
                 InitWrap.text().formatText("\n§dShadow List:")
@@ -227,11 +263,13 @@ public class AfkMeAdminCommand implements IServerCommand
         MutableComponent text = Component.literal("");
 
         text.append(
-                InitWrap.text().formatText("§7Player Info for: ")
-        ).append(
-                player.getDisplayName()
+                InitWrap.text().formatText("§7Player Info: ")
         ).append(
                 PlayerManager.getInstance().getDebugFormatted(player.getUUID())
+        ).append(
+                InitWrap.text().formatText("\n§7Shadow Info: ")
+        ).append(
+                ShadowEntryList.getInstance().getDebugFormatted(player.getUUID())
         );
 
         //#if MC >= 1.20.1

@@ -26,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
 
 import com.mojang.authlib.GameProfile;
 
-import com.sakuraryoko.afkme.impl.player.*;
+import com.sakuraryoko.afkme.impl.player.state.*;
 import com.sakuraryoko.corelib.api.config.IConfigOption;
 
 @ApiStatus.Internal
@@ -68,6 +68,20 @@ public class PlayerOptions implements IConfigOption
 		this.state = opts.state;
 		this.pos = opts.pos;
 		this.game = opts.game;
+
+		// Fix stupid crashes from people editing the file
+		if (this.state.enabled())
+		{
+			if (this.state.time() <= 1)
+			{
+				this.state = new ShadowState(true, 1, this.state.timeout(), this.state.reason());
+			}
+			if (this.state.timeout() <= 1L)
+			{
+				final long timeout = (this.state.time() * 60L) * 1000L;
+				this.state = new ShadowState(true, this.state.time(), timeout, this.state.reason());
+			}
+		}
 
 		return this;
 	}

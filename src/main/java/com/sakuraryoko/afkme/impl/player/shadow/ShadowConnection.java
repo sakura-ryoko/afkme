@@ -21,6 +21,7 @@
 package com.sakuraryoko.afkme.impl.player.shadow;
 
 import io.netty.channel.embedded.EmbeddedChannel;
+import org.jetbrains.annotations.ApiStatus;
 
 import net.minecraft.network.Connection;
 //#if MC >= 1.21.8
@@ -39,6 +40,7 @@ import net.minecraft.network.Connection;
 //#endif
 import net.minecraft.network.protocol.PacketFlow;
 
+@ApiStatus.Internal
 public class ShadowConnection extends Connection
 {
 	public ShadowConnection(PacketFlow receiving)

@@ -21,46 +21,44 @@
 package com.sakuraryoko.afkme.impl.player;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 import javax.annotation.Nonnull;
 import com.google.common.collect.ImmutableMap;
-import org.apache.commons.lang3.tuple.Pair;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import com.mojang.authlib.GameProfile;
 
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
-import net.minecraft.world.level.GameType;
 
 import com.sakuraryoko.afkme.impl.AfkMe;
+import com.sakuraryoko.afkme.impl.config.AfkMeConfigHandler;
 import com.sakuraryoko.afkme.impl.config.ConfigWrap;
 import com.sakuraryoko.afkme.impl.config.data.options.PlayerOptions;
-import com.sakuraryoko.afkme.impl.modinit.InitWrap;
 import com.sakuraryoko.afkme.impl.player.shadow.ShadowServerPlayer;
+import com.sakuraryoko.afkme.impl.player.state.*;
+import com.sakuraryoko.corelib.impl.config.ConfigManager;
 
+@ApiStatus.Internal
 public class PlayerManager
 {
 	private static final PlayerManager INSTANCE = new PlayerManager();
 	public static PlayerManager getInstance() { return INSTANCE; }
 
-	private final HashMap<UUID, ShadowState> playerMap;
-	private final HashMap<UUID, PosState> posMap;
-	private final HashMap<UUID, GameState> gameMap;
+	private final List<PlayerEntry> players;
 
+	@ApiStatus.Internal
 	private PlayerManager()
 	{
-		this.playerMap = new HashMap<>();
-		this.posMap = new HashMap<>();
-		this.gameMap = new HashMap<>();
+		this.players = new ArrayList<>();
 	}
 
+	@ApiStatus.Internal
 	public void syncProfile(GameProfile profile)
 	{
 		List<PlayerOptions> config = ConfigWrap.players();
@@ -80,37 +78,62 @@ public class PlayerManager
 		this.addOrUpdateProfile(profile, ShadowState.DEFAULT);
 	}
 
+	@ApiStatus.Internal
 	public void syncFromConfig(PlayerOptions opt)
 	{
 		this.addOrUpdateProfile(ProfileWrap.profile(opt.uuid, opt.name), opt.state);
 	}
 
+	@ApiStatus.Internal
 	private void addOrUpdateProfile(GameProfile profile, ShadowState state)
 	{
 		UUID uuid = ProfileWrap.id(profile);
+		String name = ProfileWrap.name(profile);
+		PosState pos = PosWrap.defaultPos();
+		GameState game = GameWrap.defMode();
+		boolean found = false;
 
-		this.posMap.putIfAbsent(uuid, PosWrap.defaultPos());
-		this.gameMap.putIfAbsent(uuid, GameWrap.defMode());
+//		if (this.playerMap.containsKey(uuid) && this.playerMap.get(uuid) != state)
+//		{
+//			this.playerMap.remove(uuid);
+//			this.playerMap.put(uuid, state);
+//		}
+//		else if (!this.playerMap.containsKey(uuid))
+//		{
+//			this.playerMap.put(uuid, state);
+//			this.checkOrUpdateFromConfig(profile);
+//		}
 
-		if (this.playerMap.containsKey(uuid) && this.playerMap.get(uuid) != state)
+		for (PlayerEntry entry : this.players)
 		{
-			this.playerMap.remove(uuid);
-			this.playerMap.put(uuid, state);
-		}
-		else if (!this.playerMap.containsKey(uuid))
-		{
-			this.playerMap.put(uuid, state);
-			this.checkOrUpdateFromConfig(profile);
+			if (entry.uuid().equals(uuid))
+			{
+				if (!entry.state().equals(state))
+				{
+					PlayerEntry newEntry = entry.updateState(state);
+					this.players.remove(entry);
+					this.players.add(newEntry);
+				}
+
+				found = true;
+				break;
+			}
 		}
 
-//		this.debugMap.put(uuid, false);
-//
+		if (!found)
+		{
+			this.players.add(
+					new PlayerEntry(uuid, name, state, pos, game)
+			);
+		}
+
 		if (ConfigWrap.mainOpt().debugMode)
 		{
 			AfkMe.LOGGER.warn("addOrUpdateProfile: player: ['{}'/{}] state: {}", ProfileWrap.name(profile), ProfileWrap.id(profile), state.toString());
 		}
 	}
 
+	@ApiStatus.Internal
 	private void checkOrUpdateFromConfig(GameProfile profile)
 	{
 		List<PlayerOptions> config = new ArrayList<>(ConfigWrap.players());
@@ -127,6 +150,7 @@ public class PlayerManager
 		}
 	}
 
+	@ApiStatus.Internal
 	private void addConfig(GameProfile profile)
 	{
 		List<PlayerOptions> config = new ArrayList<>(ConfigWrap.players());
@@ -138,6 +162,7 @@ public class PlayerManager
 			if (entry.uuid.equals(uuid))
 			{
 				exists = true;
+				break;
 			}
 		}
 
@@ -145,14 +170,24 @@ public class PlayerManager
 		{
 			PlayerOptions opt = PlayerOptions.fromProfile(profile, ShadowState.DEFAULT);
 
-			if (this.posMap.containsKey(uuid))
-			{
-				opt.pos = this.posMap.get(uuid);
-			}
+//			if (this.posMap.containsKey(uuid))
+//			{
+//				opt.pos = this.posMap.get(uuid);
+//			}
+//
+//			if (this.gameMap.containsKey(uuid))
+//			{
+//				opt.game = this.gameMap.get(uuid);
+//			}
 
-			if (this.gameMap.containsKey(uuid))
+			for (PlayerEntry entry : this.players)
 			{
-				opt.game = this.gameMap.get(uuid);
+				if (entry.matches(uuid))
+				{
+					opt.pos = entry.pos();
+					opt.game = entry.game();
+					break;
+				}
 			}
 
 			ConfigWrap.players().add(opt);
@@ -164,6 +199,7 @@ public class PlayerManager
 		}
 	}
 
+	@ApiStatus.Internal
 	private void setConfig(GameProfile profile, ShadowState state)
 	{
 		List<PlayerOptions> config = new ArrayList<>(ConfigWrap.players());
@@ -176,15 +212,26 @@ public class PlayerManager
 				!entry.state.equals(state))
 			{
 				entry.state = state;
+				entry.name = ProfileWrap.name(profile);
 
-				if (this.posMap.containsKey(uuid))
-				{
-					entry.pos = this.posMap.get(uuid);
-				}
+//				if (this.posMap.containsKey(uuid))
+//				{
+//					entry.pos = this.posMap.get(uuid);
+//				}
+//
+//				if (this.gameMap.containsKey(uuid))
+//				{
+//					entry.game = this.gameMap.get(uuid);
+//				}
 
-				if (this.gameMap.containsKey(uuid))
+				for (PlayerEntry playerEntry : this.players)
 				{
-					entry.game = this.gameMap.get(uuid);
+					if (playerEntry.matches(uuid))
+					{
+						entry.pos = playerEntry.pos();
+						entry.game = playerEntry.game();
+						break;
+					}
 				}
 
 				dirty = true;
@@ -199,14 +246,29 @@ public class PlayerManager
 			{
 				PlayerOptions opt = new PlayerOptions(entry);
 
-				if (this.posMap.containsKey(uuid))
-				{
-					opt.pos = this.posMap.get(uuid);
-				}
+//				if (this.nameMap.containsKey(uuid))
+//				{
+//					opt.name = this.nameMap.get(uuid);
+//				}
+//
+//				if (this.posMap.containsKey(uuid))
+//				{
+//					opt.pos = this.posMap.get(uuid);
+//				}
+//
+//				if (this.gameMap.containsKey(uuid))
+//				{
+//					opt.game = this.gameMap.get(uuid);
+//				}
 
-				if (this.gameMap.containsKey(uuid))
+				for (PlayerEntry playerEntry : this.players)
 				{
-					opt.game = this.gameMap.get(uuid);
+					if (playerEntry.matches(uuid))
+					{
+						entry.pos = playerEntry.pos();
+						entry.game = playerEntry.game();
+						break;
+					}
 				}
 
 				ConfigWrap.players().add(opt);
@@ -218,9 +280,17 @@ public class PlayerManager
 	{
 		UUID uuid = ProfileWrap.id(profile);
 
-		if (this.playerMap.containsKey(uuid))
+//		if (this.playerMap.containsKey(uuid))
+//		{
+//			return this.playerMap.get(uuid);
+//		}
+
+		for (PlayerEntry entry : this.players)
 		{
-			return this.playerMap.get(uuid);
+			if (entry.matches(uuid))
+			{
+				return entry.state();
+			}
 		}
 
 		this.addOrUpdateProfile(profile, ShadowState.DEFAULT);
@@ -229,17 +299,27 @@ public class PlayerManager
 		return ShadowState.DEFAULT;
 	}
 
+	@ApiStatus.Internal
 	public ShadowState getShadowState(@NotNull UUID uuid)
 	{
-		if (this.playerMap.containsKey(uuid))
+//		if (this.playerMap.containsKey(uuid))
+//		{
+//			return this.playerMap.get(uuid);
+//		}
+
+		for (PlayerEntry entry : this.players)
 		{
-			return this.playerMap.get(uuid);
+			if (entry.matches(uuid))
+			{
+				return entry.state();
+			}
 		}
 
-		this.playerMap.put(uuid, ShadowState.DEFAULT);
+//		this.playerMap.put(uuid, ShadowState.DEFAULT);
 		return ShadowState.DEFAULT;
 	}
 
+	@ApiStatus.Internal
 	public void setShadowState(@NotNull GameProfile profile, ShadowState state)
 	{
 		this.addOrUpdateProfile(profile, state);
@@ -252,11 +332,24 @@ public class PlayerManager
 		}
 	}
 
+	public void resetShadowState(@Nonnull ServerPlayer player)
+	{
+		this.setShadowState(player.getGameProfile(), ShadowState.DEFAULT);
+	}
+
 	public PosState getPosState(@NotNull UUID uuid)
 	{
-		if (this.posMap.containsKey(uuid))
+//		if (this.posMap.containsKey(uuid))
+//		{
+//			return this.posMap.get(uuid);
+//		}
+
+		for (PlayerEntry entry : this.players)
 		{
-			return this.posMap.get(uuid);
+			if (entry.matches(uuid))
+			{
+				return entry.pos();
+			}
 		}
 
 		List<PlayerOptions> config = new ArrayList<>(ConfigWrap.players());
@@ -274,9 +367,17 @@ public class PlayerManager
 
 	public GameState getGameMode(@NotNull UUID uuid)
 	{
-		if (this.gameMap.containsKey(uuid))
+//		if (this.gameMap.containsKey(uuid))
+//		{
+//			return this.gameMap.get(uuid);
+//		}
+
+		for (PlayerEntry entry : this.players)
 		{
-			return this.gameMap.get(uuid);
+			if (entry.matches(uuid))
+			{
+				return entry.game();
+			}
 		}
 
 		List<PlayerOptions> config = new ArrayList<>(ConfigWrap.players());
@@ -292,172 +393,226 @@ public class PlayerManager
 		return GameWrap.defMode();
 	}
 
-	public void updatePlayerPosition(@Nonnull ServerPlayer player)
+	@ApiStatus.Internal
+	public void updatePlayerData(@Nonnull ServerPlayer player)
 	{
 		PosState pos = PosWrap.of(player);
 		GameState game = GameWrap.of(player);
 		UUID uuid = player.getUUID();
-		this.posMap.put(uuid, pos);
-		this.gameMap.put(uuid, game);
+//		this.nameMap.put(uuid, player.getName().getString());
+//		this.posMap.put(uuid, pos);
+//		this.gameMap.put(uuid, game);
+
+		for (PlayerEntry entry : this.players)
+		{
+			if (entry.matches(uuid))
+			{
+				PlayerEntry newEntry = entry.updatePlayerData(player.getName().getString(), pos, game);
+				this.players.remove(entry);
+				this.players.add(newEntry);
+				break;
+			}
+		}
 	}
 
 	@VisibleForTesting
-	public ImmutableMap<UUID, ShadowState> getPlayerMap()
+	public ImmutableMap<UUID, PlayerEntry> getPlayerMap()
 	{
-		return ImmutableMap.copyOf(this.playerMap);
+		ImmutableMap.Builder<UUID, PlayerEntry> map = ImmutableMap.builder();
+
+		for (PlayerEntry entry : this.players)
+		{
+			map.put(entry.uuid(), entry);
+		}
+
+		return map.build();
 	}
 
 	@VisibleForTesting
 	public Component getDebugFormatted(UUID uuid)
 	{
-		ShadowState state = this.playerMap.getOrDefault(uuid, ShadowState.DEFAULT);
-		PosState pos = this.posMap.getOrDefault(uuid, PosWrap.defaultPos());
-		GameState game = this.gameMap.getOrDefault(uuid, GameWrap.defMode());
-		MutableComponent text = Component.literal("");
+		for (PlayerEntry entry : this.players)
+		{
+			if (entry.matches(uuid))
+			{
+				return entry.getDebugFormatted();
+			}
+		}
 
-		text.append(
-				InitWrap.text().formatText("\n - §7UUID: ")
-		).append(
-				InitWrap.text().formatText(uuid.toString())
-		).append(
-				InitWrap.text().formatText("\n - §7Shadow: ")
-		).append(
-				state.getDebugFormatted()
-		).append(
-				InitWrap.text().formatText("\n - §7Game: ")
-		).append(
-				game.getDebugFormatted()
-		).append(
-				InitWrap.text().formatText("\n - §7Position: ")
-		).append(
-				InitWrap.text().formatText(
-						String.format("§b%s §f[%d, %d, %d]§r", pos.location(), pos.x(), pos.y(), pos.z())
-				)
-		);
-
-		return text;
+		return Component.literal("§cPlayer not found§r");
 	}
 
-	public void onServerStop(@Nonnull MinecraftServer server)
+	@ApiStatus.Internal
+	private boolean syncConfig(@Nonnull MinecraftServer server, boolean stop)
 	{
 		PlayerList playerList = server.getPlayerList();
 		List<ServerPlayer> players = playerList.getPlayers();
+		boolean dirty = false;
 
 		for (ServerPlayer player : players)
 		{
-			String name = player.getName().getString();
-			UUID uuid = player.getUUID();
-			ShadowState state = this.playerMap.getOrDefault(uuid, ShadowState.DEFAULT);
-			PosState pos = PosWrap.of(player);
-			GameState game = GameWrap.of(player);
-
-			if (player instanceof ShadowServerPlayer shadow)
+			if (this.syncConfigEach(player))
 			{
-				ShadowEntry entry = ShadowEntryList.getInstance().get(shadow);
-
-				if (entry == null)
-				{
-					entry = ShadowEntryList.getInstance().add(shadow, state);
-				}
-
-				if (entry != null)
-				{
-					state = new ShadowState(true, state.time(), entry.shadowTimeout(), state.reason());
-				}
-				else
-				{
-					state = new ShadowState(true, state.time(), shadow.getTimeout(), state.reason());
-				}
-			}
-
-			List<PlayerOptions> config = new ArrayList<>(ConfigWrap.players());
-			boolean found = false;
-			boolean dirty = false;
-
-			for (PlayerOptions entry : config)
-			{
-				if (entry.uuid.equals(uuid))
-				{
-					if (!entry.state.equals(state))
-					{
-						entry.state = state;
-						dirty = true;
-					}
-					if (!entry.pos.equals(pos))
-					{
-						entry.pos = pos;
-						dirty = true;
-					}
-					if (!entry.game.equals(game))
-					{
-						entry.game = game;
-						dirty = true;
-					}
-					if (!entry.name.equals(name))
-					{
-						entry.name = name;
-						dirty = true;
-					}
-
-					found = true;
-				}
-			}
-
-			if (!found)
-			{
-				PlayerOptions opt = PlayerOptions.fromProfile(player.getGameProfile(), state);
-				opt.pos = pos;
-				opt.game = game;
-				config.add(opt);
 				dirty = true;
 			}
-
-			if (dirty)
-			{
-				// FIXME
-				ConfigWrap.players().clear();
-
-				for (PlayerOptions entry : config)
-				{
-					PlayerOptions opt = new PlayerOptions(entry);
-					ConfigWrap.players().add(opt);
-				}
-			}
 		}
-	}
 
-	public void onServerStarted(@Nonnull MinecraftServer server)
-	{
+		if (stop) { return dirty; }
+
+		// Spawn shadow configured players
 		List<PlayerOptions> config = new ArrayList<>(ConfigWrap.players());
-		PlayerList playerList = server.getPlayerList();
-		List<ServerPlayer> players = playerList.getPlayers();
 
 		for (PlayerOptions entry : config)
 		{
-			if (entry != null)
+			boolean found = false;
+
+			for (ServerPlayer player : players)
 			{
-				UUID uuid = entry.uuid;
-				ShadowState state = entry.state;
-
-				if (state.enabled())
+				if (entry.uuid.equals(player.getUUID()))
 				{
-					boolean exists = false;
-
-					for (ServerPlayer player : players)
-					{
-						if (player.getUUID().equals(uuid))
-						{
-							exists = true;
-							break;
-						}
-					}
-
-					if (!exists)
-					{
-						ShadowServerPlayer.createShadowFromConfig(server, entry);
-					}
+					found = true;
+					break;
 				}
 			}
+
+			if (!found && entry.state.enabled())
+			{
+				if (ConfigWrap.mainOpt().debugMode)
+				{
+					AfkMe.LOGGER.warn("syncConfig: Spawning Shadow player: ['{}'/{}]", entry.name, entry.uuid.toString());
+				}
+
+				ShadowServerPlayer.createShadowFromConfig(server, entry);
+			}
+		}
+
+		return dirty;
+	}
+
+	@ApiStatus.Internal
+	private boolean syncConfigEach(ServerPlayer player)
+	{
+		List<PlayerOptions> oldConfig = new ArrayList<>(ConfigWrap.players());
+		List<PlayerOptions> newConfig = new ArrayList<>();
+		String name = player.getName().getString();
+		UUID uuid = player.getUUID();
+		PosState pos = PosWrap.of(player);
+		GameState game = GameWrap.of(player);
+		ShadowState state = this.getShadowState(uuid);
+
+		if (player instanceof ShadowServerPlayer shadow)
+		{
+			ShadowEntry entry = ShadowEntryList.getInstance().get(shadow);
+
+			if (entry == null)
+			{
+				entry = ShadowEntryList.getInstance().add(shadow, state);
+			}
+
+			if (entry != null)
+			{
+				state = new ShadowState(true, state.time(), entry.shadowTimeout(), state.reason());
+			}
+			else
+			{
+				state = new ShadowState(true, state.time(), shadow.getTimeout(), state.reason());
+			}
+		}
+
+		boolean found = false;
+		boolean dirty = false;
+
+		for (PlayerOptions entry : oldConfig)
+		{
+			if (entry.uuid.equals(uuid))
+			{
+				if (!entry.state.equals(state))
+				{
+					entry.state = state;
+					dirty = true;
+				}
+				if (!entry.pos.equals(pos))
+				{
+					entry.pos = pos;
+					dirty = true;
+				}
+				if (!entry.game.equals(game))
+				{
+					entry.game = game;
+					dirty = true;
+				}
+				if (!entry.name.equals(name))
+				{
+					entry.name = name;
+					dirty = true;
+				}
+
+				found = true;
+			}
+
+			newConfig.add(entry);
+		}
+
+		if (!found)
+		{
+			PlayerOptions opt = PlayerOptions.fromProfile(player.getGameProfile(), state);
+			opt.pos = pos;
+			opt.game = game;
+			newConfig.add(opt);
+			dirty = true;
+		}
+
+		if (dirty)
+		{
+			ConfigWrap.players().clear();
+
+			for (PlayerOptions entry : newConfig)
+			{
+				PlayerOptions opt = new PlayerOptions(entry);
+				ConfigWrap.players().add(opt);
+			}
+
+			return true;
+		}
+
+		return false;
+	}
+
+	@ApiStatus.Internal
+	public void onServerStop(@Nonnull MinecraftServer server)
+	{
+		if (ConfigWrap.mainOpt().debugMode)
+		{
+			AfkMe.LOGGER.warn("onServerStop --> syncConfig()");
+		}
+
+		if (this.syncConfig(server, true))
+		{
+			if (ConfigWrap.mainOpt().debugMode)
+			{
+				AfkMe.LOGGER.warn("onServerStop(): flushing changes ...");
+			}
+
+			ConfigManager.getInstance().saveEach(AfkMeConfigHandler.getInstance());
+		}
+	}
+
+	@ApiStatus.Internal
+	public void onServerStarted(@Nonnull MinecraftServer server)
+	{
+		if (ConfigWrap.mainOpt().debugMode)
+		{
+			AfkMe.LOGGER.warn("onServerStarted --> syncConfig()");
+		}
+
+		if (this.syncConfig(server, false))
+		{
+			if (ConfigWrap.mainOpt().debugMode)
+			{
+				AfkMe.LOGGER.warn("onServerStarted(): flushing changes ...");
+			}
+
+			ConfigManager.getInstance().saveEach(AfkMeConfigHandler.getInstance());
 		}
 	}
 }

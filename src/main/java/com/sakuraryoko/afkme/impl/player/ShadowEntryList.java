@@ -22,15 +22,21 @@ package com.sakuraryoko.afkme.impl.player;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.google.common.collect.ImmutableList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.VisibleForTesting;
+
+import net.minecraft.network.chat.Component;
 
 import com.sakuraryoko.afkme.impl.AfkMe;
 import com.sakuraryoko.afkme.impl.player.shadow.ShadowServerPlayer;
+import com.sakuraryoko.afkme.impl.player.state.ShadowState;
 
+@ApiStatus.Internal
 public class ShadowEntryList
 {
 	private static final ShadowEntryList INSTANCE = new ShadowEntryList();
@@ -106,9 +112,17 @@ public class ShadowEntryList
 		return ImmutableList.copyOf(this.list);
 	}
 
-	public void clear()
+	@VisibleForTesting
+	public Component getDebugFormatted(UUID uuid)
 	{
-		this.list.forEach(ShadowEntry::reset);
-		this.list.clear();
+		for (ShadowEntry entry : this.list)
+		{
+			if (entry.matches(uuid))
+			{
+				return entry.getDebugFormatted();
+			}
+		}
+
+		return Component.literal("§cShadow Player not found§r");
 	}
 }

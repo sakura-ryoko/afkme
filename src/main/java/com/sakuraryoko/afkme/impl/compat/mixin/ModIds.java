@@ -20,6 +20,9 @@
 
 package com.sakuraryoko.afkme.impl.compat.mixin;
 
+import org.jetbrains.annotations.ApiStatus;
+
+@ApiStatus.Internal
 public class ModIds
 {
 	public static final String afkplus = "afkplus";

@@ -30,7 +30,9 @@ import com.sakuraryoko.afkme.impl.config.ConfigWrap;
 import com.sakuraryoko.afkme.impl.modinit.InitWrap;
 import com.sakuraryoko.afkme.impl.player.interfaces.IPlayerInvoker;
 import com.sakuraryoko.afkme.impl.player.shadow.ShadowServerPlayer;
+import com.sakuraryoko.afkme.impl.player.state.ShadowState;
 
+@ApiStatus.Internal
 public record ShadowEntryHandler(ShadowEntry entry)
 {
     public ShadowEntryHandler(@Nonnull ShadowEntry entry)
@@ -112,8 +114,10 @@ public record ShadowEntryHandler(ShadowEntry entry)
         }
 
         this.entry().clearShadow();
+        this.entry().reset();
     }
 
+    @ApiStatus.Internal
     private void sendMessage(Component message)
     {
         if (!ConfigWrap.mess().broadcastMessages || message.getString().trim().isEmpty())
@@ -129,13 +133,9 @@ public record ShadowEntryHandler(ShadowEntry entry)
         }
     }
 
+    @ApiStatus.Internal
     private IPlayerInvoker invoker()
     {
         return (IPlayerInvoker) this.entry().shadowPlayer();
-    }
-
-    public void reset()
-    {
-        // TODO
     }
 }

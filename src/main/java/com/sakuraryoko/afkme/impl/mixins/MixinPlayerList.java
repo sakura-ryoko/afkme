@@ -45,7 +45,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import com.sakuraryoko.afkme.impl.player.PlayerManager;
 import com.sakuraryoko.afkme.impl.player.ShadowEntry;
 import com.sakuraryoko.afkme.impl.player.ShadowEntryList;
-import com.sakuraryoko.afkme.impl.player.ShadowState;
+import com.sakuraryoko.afkme.impl.player.state.ShadowState;
 import com.sakuraryoko.afkme.impl.player.shadow.ShadowGamePacketListener;
 import com.sakuraryoko.afkme.impl.player.shadow.ShadowServerPlayer;
 

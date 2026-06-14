@@ -18,22 +18,34 @@
  * along with AfkMe.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.sakuraryoko.afkme.impl.player;
+package com.sakuraryoko.afkme.impl.player.state;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.GameType;
+import org.jetbrains.annotations.ApiStatus;
 
-public class GameWrap
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
+
+@ApiStatus.Internal
+public class PosWrap
 {
-	public static GameState defMode()
+	public static PosState defaultPos()
 	{
-		return new GameState(GameType.DEFAULT_MODE.getName(), false);
+		return new PosState(Level.OVERWORLD.location().toString(), 0, 0, 0, 0f, 0f);
 	}
 
-	public static GameState of(@Nonnull ServerPlayer player)
+	public static PosState of(@Nonnull ServerPlayer player)
 	{
-		return new GameState(player.gameMode.getGameModeForPlayer().getName(), player.getAbilities().flying);
+		//#if MC >= 1.20.1
+		//$$ ResourceKey<Level> key = player.level().dimension();
+		//#else
+		ResourceKey<Level> key = player.level.dimension();
+		//#endif
+		BlockPos pos = player.blockPosition();
+
+		return new PosState(key.location().toString(), pos.getX(), pos.getY(), pos.getZ(), player.getYRot(), player.getXRot());
 	}
 }

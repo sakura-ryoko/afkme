@@ -18,46 +18,25 @@
  * along with AfkMe.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.sakuraryoko.afkme.impl.player;
+package com.sakuraryoko.afkme.impl.player.state;
 
-import java.util.UUID;
+import javax.annotation.Nonnull;
+
 import org.jetbrains.annotations.ApiStatus;
 
-import com.mojang.authlib.GameProfile;
-//#if MC >= 1.21.10
-//$$ import net.minecraft.server.players.NameAndId;
-//#endif
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.GameType;
 
 @ApiStatus.Internal
-public class ProfileWrap
+public class GameWrap
 {
-	public static UUID id(GameProfile profile)
+	public static GameState defMode()
 	{
-//#if MC >= 1.21.10
-		//$$ return profile.id();
-//#else
-		return profile.getId();
-//#endif
+		return new GameState(GameType.DEFAULT_MODE.getName(), false);
 	}
 
-	public static String name(GameProfile profile)
+	public static GameState of(@Nonnull ServerPlayer player)
 	{
-//#if MC >= 1.21.10
-		//$$ return profile.name();
-//#else
-		return profile.getName();
-//#endif
-	}
-
-	//#if MC >= 1.21.10
-	//$$public static GameProfile profile(NameAndId nameAndId)
-	//$$ {
-		//$$ return new GameProfile(nameAndId.id(), nameAndId.name());
-	//$$ }
-	//#endif
-
-	public static GameProfile profile(UUID id, String name)
-	{
-		return new GameProfile(id, name);
+		return new GameState(player.gameMode.getGameModeForPlayer().getName(), player.getAbilities().flying);
 	}
 }

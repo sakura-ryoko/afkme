@@ -18,8 +18,9 @@
  * along with AfkMe.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.sakuraryoko.afkme.impl.player;
+package com.sakuraryoko.afkme.impl.player.state;
 
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 
 import net.minecraft.network.chat.Component;
@@ -27,6 +28,7 @@ import net.minecraft.network.chat.MutableComponent;
 
 import com.sakuraryoko.afkme.impl.modinit.InitWrap;
 
+@ApiStatus.Internal
 public record ShadowState(boolean enabled, int time, long timeout, String reason)
 {
 	public static final ShadowState DEFAULT = new ShadowState(false, 129600, -1L, "");

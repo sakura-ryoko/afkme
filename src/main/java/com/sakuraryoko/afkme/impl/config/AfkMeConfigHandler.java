@@ -20,8 +20,7 @@
 
 package com.sakuraryoko.afkme.impl.config;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.jetbrains.annotations.ApiStatus;
@@ -137,15 +136,9 @@ public class AfkMeConfigHandler implements IConfigDispatch
 
         // Set default values
         config.config_date = TimeFormat.RFC1123.formatNow(null);
-        config.MAIN.defaults();
-        config.MESS.defaults();
-
-        // Copy Players Config
-        CONFIG.PLAYERS.clear();
-        config.PLAYERS.forEach(
-                player ->
-                        CONFIG.PLAYERS.add(new PlayerOptions(player))
-        );      // Deep copy
+        config.MAIN = new MainOptions();
+        config.MESS = new MessageOptions();
+        config.PLAYERS = new ArrayList<>();
 
         return config;
     }
@@ -164,6 +157,13 @@ public class AfkMeConfigHandler implements IConfigDispatch
         // Copy Incoming Config
         CONFIG.MAIN.copy(newConf.MAIN);
         CONFIG.MESS.copy(newConf.MESS);
+
+        // Copy Players Config
+        CONFIG.PLAYERS.clear();
+        newConf.PLAYERS.forEach(
+                player ->
+                        CONFIG.PLAYERS.add(new PlayerOptions(player))
+        );      // Deep copy
 
         return CONFIG;
     }

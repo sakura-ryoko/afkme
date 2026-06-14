@@ -23,9 +23,11 @@ package com.sakuraryoko.afkme.impl.compat.mixin;
 import java.util.List;
 import java.util.Set;
 import me.fallenbreath.conditionalmixin.api.mixin.RestrictiveMixinConfigPlugin;
+import org.jetbrains.annotations.ApiStatus;
 
 import com.sakuraryoko.afkme.impl.AfkMe;
 
+@ApiStatus.Internal
 public class AfkMeMixinConfigPlugin extends RestrictiveMixinConfigPlugin
 {
 	@Override

@@ -22,6 +22,7 @@ package com.sakuraryoko.afkme.impl.player.shadow;
 
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 //#if MC >= 1.21.10
@@ -93,8 +94,13 @@ import net.minecraft.world.level.block.entity.SkullBlockEntity;
 import com.sakuraryoko.afkme.impl.config.ConfigWrap;
 import com.sakuraryoko.afkme.impl.config.data.options.PlayerOptions;
 import com.sakuraryoko.afkme.impl.player.*;
+import com.sakuraryoko.afkme.impl.player.state.GameState;
+import com.sakuraryoko.afkme.impl.player.state.PosState;
+import com.sakuraryoko.afkme.impl.player.state.ShadowState;
 import com.sakuraryoko.corelib.impl.text.BuiltinTextHandler;
 
+@ApiStatus.Internal
+@SuppressWarnings("EntityConstructor")
 public class ShadowServerPlayer extends ServerPlayer
 {
 	private boolean freshPlayer;
@@ -577,7 +583,7 @@ public class ShadowServerPlayer extends ServerPlayer
 
 			if (blockPos.getX() != pos.x() || blockPos.getY() != pos.y() || blockPos.getZ() != pos.z())
 			{
-				PlayerManager.getInstance().updatePlayerPosition(this);
+				PlayerManager.getInstance().updatePlayerData(this);
 			}
 
 			if (!entry.tickShadowTimeout(tickDelta))
@@ -594,6 +600,7 @@ public class ShadowServerPlayer extends ServerPlayer
 
 				server.getPlayerList().remove(this);
 				ShadowEntryList.getInstance().remove(this);
+				PlayerManager.getInstance().setShadowState(this.getGameProfile(), ShadowState.DEFAULT);
 			}
 		}
 	}
@@ -603,9 +610,19 @@ public class ShadowServerPlayer extends ServerPlayer
 	{
 		this.dismount();
 		super.die(damageSource);
-		// TODO
-//		this.setHealth(20.0F);
-		this.foodData = new FoodData();
+
+		if (ConfigWrap.mainOpt().resetHealthUponDeath)
+		{
+			this.setHealth(20.0F);
+			this.foodData = new FoodData();
+		}
+		else
+		{
+			ShadowEntryList.getInstance().remove(this);
+			PlayerManager.getInstance().updatePlayerData(this);
+			PlayerManager.getInstance().resetShadowState(this);
+		}
+
 		this.kill(this.getCombatTracker().getDeathMessage());
 	}
 
