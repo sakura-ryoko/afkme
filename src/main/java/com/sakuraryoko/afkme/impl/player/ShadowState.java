@@ -22,9 +22,14 @@ package com.sakuraryoko.afkme.impl.player;
 
 import org.jspecify.annotations.NonNull;
 
-public record ShadowState(boolean enabled, long timeout, String reason)
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+
+import com.sakuraryoko.afkme.impl.modinit.InitWrap;
+
+public record ShadowState(boolean enabled, int time, long timeout, String reason)
 {
-	public static final ShadowState DEFAULT = new ShadowState(false, -1L, "");
+	public static final ShadowState DEFAULT = new ShadowState(false, 129600, -1L, "");
 
 	@Override
 	public boolean equals(Object o)
@@ -47,6 +52,7 @@ public record ShadowState(boolean enabled, long timeout, String reason)
 	{
 		int hash = 7;
 		hash = 97 * hash + (this.enabled ? 1 : 0);
+		hash = 97 * hash + Long.hashCode(this.time);
 		hash = 97 * hash + Long.hashCode(this.timeout);
 		hash = 97 * hash + (this.reason != null ? this.reason.hashCode() : 0);
 		return hash;
@@ -55,6 +61,33 @@ public record ShadowState(boolean enabled, long timeout, String reason)
 	@Override
 	public @NonNull String toString()
 	{
-		return "ShadowState{" + "enabled=" + this.enabled + ", timeout=" + this.timeout + ", reason=" + this.reason + '}';
+		return "ShadowState{" + "enabled=" + this.enabled + ", time=" + this.time + ", timeout=" + this.timeout + ", reason=" + this.reason + '}';
+	}
+
+	public Component getDebugFormatted()
+	{
+		MutableComponent text = Component.literal("");
+
+		text.append(
+				InitWrap.text().formatText("§rEN: ")
+		).append(
+				InitWrap.text().formatText(this.enabled ? "§6Y§r" : "§aN§r")
+		).append(
+				InitWrap.text().formatText("§r / HT: ")
+		).append(
+				InitWrap.text().formatText(String.format("§e%d§r", this.time))
+		).append(
+				InitWrap.text().formatText("§r / TO: ")
+		).append(
+				InitWrap.text().formatText(String.format("§e%d§r", this.timeout))
+		).append(
+				InitWrap.text().formatText("§r / R: §e")
+		).append(
+				InitWrap.text().formatText(this.reason.isEmpty() ? "<EMPTY>" : this.reason)
+		).append(
+				InitWrap.text().formatText("§r")
+		);
+
+		return text;
 	}
 }

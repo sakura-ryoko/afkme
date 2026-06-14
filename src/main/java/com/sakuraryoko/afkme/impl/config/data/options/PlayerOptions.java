@@ -26,8 +26,7 @@ import org.jetbrains.annotations.NotNull;
 
 import com.mojang.authlib.GameProfile;
 
-import com.sakuraryoko.afkme.impl.player.ProfileWrap;
-import com.sakuraryoko.afkme.impl.player.ShadowState;
+import com.sakuraryoko.afkme.impl.player.*;
 import com.sakuraryoko.corelib.api.config.IConfigOption;
 
 @ApiStatus.Internal
@@ -36,6 +35,8 @@ public class PlayerOptions implements IConfigOption
 	public UUID uuid;
 	public String name;
 	public ShadowState state;
+	public PosState pos;
+	public GameState game;
 
 	public PlayerOptions()
 	{
@@ -54,6 +55,8 @@ public class PlayerOptions implements IConfigOption
 		this.uuid = UUID.randomUUID();
 		this.name = this.uuid.toString();
 		this.state = ShadowState.DEFAULT;
+		this.pos = PosWrap.defaultPos();
+		this.game = GameWrap.defMode();
 	}
 
 	@Override
@@ -63,6 +66,8 @@ public class PlayerOptions implements IConfigOption
 		this.uuid = opts.uuid;
 		this.name = opts.name;
 		this.state = opts.state;
+		this.pos = opts.pos;
+		this.game = opts.game;
 
 		return this;
 	}
@@ -92,6 +97,8 @@ public class PlayerOptions implements IConfigOption
 		opts.uuid = ProfileWrap.id(profile);
 		opts.name = ProfileWrap.name(profile);
 		opts.state = state;
+		opts.pos = PosWrap.defaultPos();
+		opts.game = GameWrap.defMode();
 		return opts;
 	}
 }

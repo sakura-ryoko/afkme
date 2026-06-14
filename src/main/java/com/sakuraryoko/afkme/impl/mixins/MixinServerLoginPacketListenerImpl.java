@@ -81,7 +81,7 @@ public abstract class MixinServerLoginPacketListenerImpl
 
 			if (entry != null)
 			{
-				entry.handler().unregisterShadowAfk();
+				ShadowEntryList.getInstance().remove(sp);
 			}
 
 			if (player.isInvulnerable() && player.gameMode.isSurvival())

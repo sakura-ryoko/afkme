@@ -20,8 +20,18 @@
 
 package com.sakuraryoko.afkme.impl.player.shadow;
 
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+//#if MC >= 1.21.10
+//$$ import org.slf4j.Logger;
+//$$ import org.slf4j.LoggerFactory;
+//#endif
+//#if MC >= 1.20.2
+//$$ import java.util.Optional;
+//$$ import java.util.concurrent.CompletableFuture;
+//#endif
 
 import com.mojang.authlib.GameProfile;
 //#if MC >= 1.20.6
@@ -35,11 +45,22 @@ import com.mojang.authlib.GameProfile;
 //$$ import net.minecraft.network.DisconnectionDetails;
 //$$ import net.minecraft.network.chat.contents.TranslatableContents;
 //#endif
+//#if MC >= 1.21.10
+//$$ import net.minecraft.core.UUIDUtil;
+//$$ import net.minecraft.server.players.OldUsersConverter;
+//$$ import net.minecraft.world.item.component.ResolvableProfile;
+//$$ import net.minecraft.world.level.storage.TagValueInput;
+//$$ import net.minecraft.world.level.storage.ValueInput;
+//$$ import net.minecraft.util.ProblemReporter;
+//#endif
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoPacket;
 import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
 import net.minecraft.network.protocol.game.ServerboundClientCommandPacket;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
@@ -49,6 +70,7 @@ import net.minecraft.server.level.ServerPlayer;
 //#elseif MC >= 1.21.0
 //$$ import net.minecraft.world.level.portal.DimensionTransition;
 //#endif
+import net.minecraft.server.players.GameProfileCache;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -61,21 +83,23 @@ import net.minecraft.world.entity.player.ProfilePublicKey;
 //#endif
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.SkullBlockEntity;
 
+//#if MC >= 1.21.10
+//$$ import com.sakuraryoko.afkme.impl.Reference;
+//#endif
 import com.sakuraryoko.afkme.impl.config.ConfigWrap;
-import com.sakuraryoko.afkme.impl.player.PlayerManager;
-import com.sakuraryoko.afkme.impl.player.ShadowEntry;
-import com.sakuraryoko.afkme.impl.player.ShadowEntryList;
-import com.sakuraryoko.afkme.impl.player.ShadowState;
+import com.sakuraryoko.afkme.impl.config.data.options.PlayerOptions;
+import com.sakuraryoko.afkme.impl.player.*;
 import com.sakuraryoko.corelib.impl.text.BuiltinTextHandler;
 
 public class ShadowServerPlayer extends ServerPlayer
 {
-	private boolean freshPlayer = true;
+	private boolean freshPlayer;
 	private long freshHoldTime;
 	private long timeout = -1L;
-	private int time;
-	private String reason;
 	private long lastTick = -1L;
 
 	//#if MC >= 1.20.2
@@ -95,6 +119,172 @@ public class ShadowServerPlayer extends ServerPlayer
 	}
 	//#endif
 
+	//#if MC >= 1.21.10
+	//$$ private static CompletableFuture<GameProfile> fetchGameProfile(MinecraftServer server, final UUID uuid)
+	//$$ {
+		//$$ final ResolvableProfile resolver = ResolvableProfile.createUnresolved(uuid);
+		//$$ return resolver.resolveProfile(server.services().profileResolver());
+	//$$ }
+	//#elseif MC >= 1.20.2
+	//$$ private static CompletableFuture<Optional<GameProfile>> fetchGameProfile(final String name)
+	//$$ {
+		//$$ return SkullBlockEntity.fetchGameProfile(name);
+	//$$ }
+	//#endif
+
+	public static void createShadowFromConfig(MinecraftServer server, PlayerOptions opts)
+	{
+		UUID uuid = opts.uuid;
+		String name = opts.name;
+		ShadowState state = opts.state;
+		PosState pos = opts.pos;
+		GameState game = opts.game;
+		ResourceLocation id = ResourceLocation.tryParse(pos.location());
+		AtomicReference<ResourceKey<Level>> ref = new AtomicReference<>(Level.OVERWORLD);
+
+		if (id != null)
+		{
+			server.levelKeys().forEach(levelKey ->
+			                           {
+										   if (levelKey.location().equals(id))
+										   {
+											   ref.set(levelKey);
+										   }
+			                           });
+		}
+
+		ServerLevel level = server.getLevel(ref.get());
+		//#if MC >= 1.21.10
+		//$$ server.services().nameToIdCache().resolveOfflineUsers(false);
+		//#else
+		GameProfileCache.setUsesAuthentication(false);
+		//#endif
+		GameProfile profile;
+
+		//#if MC >= 1.21.10
+		//$$ UUID tempUUID = OldUsersConverter.convertMobOwnerIfNecessary(server, name);
+		//$$ if (tempUUID != null && !tempUUID.equals(uuid))
+		//$$ {
+			//$$ uuid = tempUUID;
+			//$$ opts.uuid = uuid;
+		//$$ }
+		//$$ if (uuid == null)
+		//$$ {
+			//$$ uuid = UUIDUtil.createOfflinePlayerUUID(name);
+		//$$ }
+		//$$ server.services().nameToIdCache().resolveOfflineUsers(server.isDedicatedServer() && server.usesAuthentication());
+		//$$ profile = new GameProfile(uuid, name);
+		//#else
+		try
+		{
+			profile = server.getProfileCache().get(name).orElse(
+					  server.getProfileCache().get(uuid).orElse(null)
+			);
+		}
+		finally
+		{
+			GameProfileCache.setUsesAuthentication(server.isDedicatedServer() && server.usesAuthentication());
+		}
+
+		if (profile == null)
+		{
+			profile = new GameProfile(uuid, name);
+		}
+		//#endif
+
+		//#if MC >= 1.21.10
+		//$$ server.services().nameToIdCache().resolveOfflineUsers(server.isDedicatedServer() && server.usesAuthentication());
+		//$$ fetchGameProfile(server, profile.id()).whenCompleteAsync((p, throwable) ->
+		//$$ {
+			//$$ if (throwable != null) { return; }
+			//$$ GameProfile temp;
+			//$$ if (p.name().isEmpty())
+			//$$ {
+				//$$ temp = profile;
+			//$$ }
+			//$$ else
+			//$$ {
+				//$$ temp = p;
+			//$$ }
+			//$$ createShadowFromConfigPhase2(server, level, temp, state, pos, game);
+		//$$ });
+		//#elseif MC >= 1.20.2
+		//$$ GameProfile tempProfile = profile;
+		//$$ fetchGameProfile(profile.getName()).thenAccept(opt ->
+		//$$ {
+			//$$ GameProfile temp = tempProfile;
+			//$$ if (opt.isPresent())
+			//$$ {
+				//$$ temp = opt.get();
+			//$$ }
+			//$$ createShadowFromConfigPhase2(server, level, temp, state, pos, game);
+		//$$ });
+		//#else
+		if (profile.getProperties().containsKey("textures"))
+		{
+			AtomicReference<GameProfile> result = new AtomicReference<>();
+			SkullBlockEntity.updateGameprofile(profile, result::set);
+			profile = result.get();
+		}
+
+		createShadowFromConfigPhase2(server, level, profile, state, pos, game);
+		//#endif
+	}
+
+	private static ShadowServerPlayer createShadowFromConfigPhase2(MinecraftServer server, ServerLevel level, GameProfile profile,
+	                                                               ShadowState state, PosState pos, GameState game)
+	{
+		GameType gameType = GameType.byName(game.gameMode(), GameType.DEFAULT_MODE);
+
+		//#if MC >= 1.20.2
+		//$$ ShadowServerPlayer shadow = new ShadowServerPlayer(server, level, profile, ClientInformation.createDefault());
+		//#elseif MC >= 1.19.3
+		//$$ ShadowServerPlayer shadow = new ShadowServerPlayer(server, level, profile);
+		//#else
+		ShadowServerPlayer shadow = new ShadowServerPlayer(server, level, profile, null);
+		//#endif
+
+		//#if MC >= 1.20.6
+		//$$ server.getPlayerList().placeNewPlayer(new ShadowConnection(PacketFlow.SERVERBOUND), shadow, new CommonListenerCookie(profile, 0, ClientInformation.createDefault(), true));
+		//#elseif MC >= 1.20.2
+		//$$ server.getPlayerList().placeNewPlayer(new ShadowConnection(PacketFlow.SERVERBOUND), shadow, new CommonListenerCookie(profile, 0, ClientInformation.createDefault()));
+		//#else
+		server.getPlayerList().placeNewPlayer(new ShadowConnection(PacketFlow.SERVERBOUND), shadow);
+		//#endif
+
+		//#if MC >= 1.21.10
+		//$$ loadPlayerNbt(shadow);
+		//#endif
+		shadow.setHealth(20.0f);
+		shadow.connection.teleport(pos.x(), pos.y(), pos.z(), pos.yaw(), pos.pitch());
+		shadow.gameMode.changeGameModeForPlayer(gameType);
+		shadow.unsetRemoved();
+		//#if MC >= 1.20.6
+		//$$ shadow.getAttribute(Attributes.STEP_HEIGHT).setBaseValue(0.6F);
+		//#elseif MC >= 1.19.4
+		//$$ shadow.setMaxUpStep(0.6F);
+		//#else
+		shadow.maxUpStep = 0.6f;
+		//#endif
+		shadow.entityData.set(DATA_PLAYER_MODE_CUSTOMISATION, (byte) 0x7f);
+		shadow.getAbilities().flying = game.flying();
+
+		shadow.timeout = state.timeout();
+		shadow.freshPlayer = true;
+		shadow.freshHoldTime = System.currentTimeMillis();
+
+		PlayerManager.getInstance().setShadowState(profile, state);
+		ShadowEntry entry = ShadowEntryList.getInstance().add(shadow, state);
+
+		if (entry != null)
+		{
+			entry.handler().registerShadowAfk(shadow, state);
+			entry.setShadowPlayer(shadow);
+		}
+
+		return shadow;
+	}
+
 	public static ShadowServerPlayer createShadow(MinecraftServer server, ServerPlayer player, int time, String reason)
 	{
 		Component kickMsg = BuiltinTextHandler.getInstance().formatText(ConfigWrap.mess().shadowKickMessage);
@@ -102,18 +292,6 @@ public class ShadowServerPlayer extends ServerPlayer
 		if (kickMsg == null || kickMsg.toString().isEmpty())
 		{
 			kickMsg = Component.translatable("multiplayer.disconnect.duplicate_login");
-		}
-
-		ShadowEntry entry = ShadowEntryList.getInstance().get(player);
-
-		if (entry == null)
-		{
-			entry = ShadowEntryList.getInstance().add(player);
-		}
-
-		if (entry == null)
-		{
-			throw new RuntimeException("Error creating ShadowServerPlayer");
 		}
 
 		server.getPlayerList().remove(player);
@@ -145,6 +323,9 @@ public class ShadowServerPlayer extends ServerPlayer
 		server.getPlayerList().placeNewPlayer(new ShadowConnection(PacketFlow.SERVERBOUND), shadow);
 		//#endif
 
+		//#if MC >= 1.21.10
+		//$$ loadPlayerNbt(shadow);
+		//#endif
 		shadow.setHealth(player.getHealth());
 		shadow.connection.teleport(player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
 		shadow.gameMode.changeGameModeForPlayer(player.gameMode.getGameModeForPlayer());
@@ -163,17 +344,44 @@ public class ShadowServerPlayer extends ServerPlayer
 			time = 129600;      // Hard coded in case of stupid
 		}
 
-		shadow.timeout = (long) (time * 60L) * 1000L;
-		shadow.time = time;
-		shadow.reason = reason;
+		shadow.timeout = (time * 60L) * 1000L;
+		shadow.freshPlayer = true;
 		shadow.freshHoldTime = System.currentTimeMillis();
-		entry.setShadowPlayer(shadow);
-		ShadowState state = new ShadowState(true, time, reason);
+
+		ShadowState state = new ShadowState(true, time, shadow.timeout, reason);
 		PlayerManager.getInstance().setShadowState(profile, state);
-		ShadowEntryList.getInstance().updateShadow(shadow);
+		ShadowEntry entry = ShadowEntryList.getInstance().add(shadow, state);
+
+		if (entry != null)
+		{
+			entry.handler().registerShadowAfk(shadow, state);
+			entry.setShadowPlayer(shadow);
+		}
 
 		return shadow;
 	}
+
+	//#if MC >= 1.21.10
+	//$$ private final static Logger DUMB_LOGGER = LoggerFactory.getLogger(Reference.MOD_ID);
+	//$$ private static void loadPlayerNbt(ShadowServerPlayer player)
+	//$$ {
+		//$$ try (ProblemReporter.ScopedCollector logger = new ProblemReporter.ScopedCollector(player.problemPath(), DUMB_LOGGER))
+		//$$ {
+			//$$ Optional<ValueInput> opt = player.level()
+				//$$ .getServer().getPlayerList()
+				//$$ .loadPlayerData(player.nameAndId())
+				//$$ .map((nbt) ->
+					//$$ TagValueInput.create(logger, player.registryAccess(), nbt)
+				//$$ );
+				//$$ opt.ifPresent((data) ->
+				//$$ {
+					//$$ player.load(data);
+					//$$ player.loadAndSpawnEnderPearls(data);
+					//$$ player.loadAndSpawnParentVehicle(data);
+				//$$ });
+			//$$ }
+		//$$ }
+	//#endif
 
 	//#if MC >= 1.20.2
 	//$$ public static ShadowServerPlayer respawnShadow(MinecraftServer server, ServerLevel level, GameProfile profile, ClientInformation ci)
@@ -213,21 +421,9 @@ public class ShadowServerPlayer extends ServerPlayer
 		return this.timeout;
 	}
 
-	public int getTime()
-	{
-		return this.time;
-	}
-
-	public String getReason()
-	{
-		return this.reason;
-	}
-
-	public void updateTimeAndReason(long timeout, int time, String reason)
+	public void updateTimeOut(long timeout)
 	{
 		this.timeout = timeout;
-		this.time = time;
-		this.reason = reason;
 	}
 
 	@Override
@@ -367,12 +563,21 @@ public class ShadowServerPlayer extends ServerPlayer
 		{
 			if (!entry.shadowEnabled())
 			{
-				entry.handler().registerShadowAfk(this, this.time, this.reason);
+				ShadowState state = PlayerManager.getInstance().getShadowState(this.getGameProfile());
+				entry.updateShadowState(state);
 				entry.setShadowTimeout(this.timeout);
 			}
 			else
 			{
 				this.timeout = entry.shadowTimeout();
+			}
+
+			PosState pos = PlayerManager.getInstance().getPosState(this.uuid);
+			BlockPos blockPos = this.blockPosition();
+
+			if (blockPos.getX() != pos.x() || blockPos.getY() != pos.y() || blockPos.getZ() != pos.z())
+			{
+				PlayerManager.getInstance().updatePlayerPosition(this);
 			}
 
 			if (!entry.tickShadowTimeout(tickDelta))
@@ -398,7 +603,8 @@ public class ShadowServerPlayer extends ServerPlayer
 	{
 		this.dismount();
 		super.die(damageSource);
-		this.setHealth(20.0F);
+		// TODO
+//		this.setHealth(20.0F);
 		this.foodData = new FoodData();
 		this.kill(this.getCombatTracker().getDeathMessage());
 	}

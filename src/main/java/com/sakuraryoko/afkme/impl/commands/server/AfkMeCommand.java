@@ -40,7 +40,6 @@ import com.sakuraryoko.afkme.impl.Reference;
 import com.sakuraryoko.afkme.impl.commands.PermsWrap;
 import com.sakuraryoko.afkme.impl.config.ConfigWrap;
 import com.sakuraryoko.afkme.impl.modinit.InitWrap;
-import com.sakuraryoko.afkme.impl.player.ShadowEntryList;
 import com.sakuraryoko.afkme.impl.player.shadow.ShadowServerPlayer;
 import com.sakuraryoko.corelib.api.commands.IServerCommand;
 
@@ -57,7 +56,7 @@ public class AfkMeCommand implements IServerCommand
                 literal(this.getName())
                         .requires(PermsWrap.check(this.getNode(), ConfigWrap.mainOpt().afkMeCommandPermissions))
                         .executes(ctx -> this.setAfkMe(ctx, -1, ""))
-                        .then(argument("time", IntegerArgumentType.integer(0))
+                        .then(argument("time", IntegerArgumentType.integer(1))
                                       .requires(PermsWrap.check(this.getNode(), ConfigWrap.mainOpt().afkMeCommandPermissions))
                                       .executes(ctx -> this.setAfkMe(ctx, IntegerArgumentType.getInteger(ctx, "time"), ""))
                                       .then(argument("reason", StringArgumentType.greedyString())
@@ -124,7 +123,7 @@ public class AfkMeCommand implements IServerCommand
 
             if (time < 0)
             {
-                time = 0;
+                time = 129600;
             }
         }
         if (reason == null || reason.isEmpty())
@@ -135,11 +134,6 @@ public class AfkMeCommand implements IServerCommand
             {
                 reason = "§rnone";
             }
-        }
-
-        if (!ShadowEntryList.getInstance().exists(player))
-        {
-            ShadowEntryList.getInstance().add(player);
         }
 
         ShadowServerPlayer.createShadow(server, player, time, reason);

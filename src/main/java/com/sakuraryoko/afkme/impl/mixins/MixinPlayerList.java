@@ -43,6 +43,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 
 import com.sakuraryoko.afkme.impl.player.PlayerManager;
+import com.sakuraryoko.afkme.impl.player.ShadowEntry;
 import com.sakuraryoko.afkme.impl.player.ShadowEntryList;
 import com.sakuraryoko.afkme.impl.player.ShadowState;
 import com.sakuraryoko.afkme.impl.player.shadow.ShadowGamePacketListener;
@@ -128,11 +129,18 @@ public abstract class MixinPlayerList
 		//$$ if (player instanceof ShadowServerPlayer sp)
 		//$$ {
 			//$$ ShadowServerPlayer newSp = ShadowServerPlayer.respawnShadow(server, level, profile, ci);
-			//$$ newSp.updateTimeAndReason(sp.getTimeout(), sp.getTime(), sp.getReason());
+			//$$ newSp.updateTimeOut(sp.getTimeout());
 			//$$ ShadowEntryList.getInstance().updateShadow(newSp);
-			//$$ if (!PlayerManager.getInstance().getShadowState(profile).enabled())
+			//$$ ShadowEntry entry = ShadowEntryList.getInstance().get(newSp);
+			//$$ ShadowState state = PlayerManager.getInstance().getShadowState(profile);
+			//$$ if (!state.enabled())
 			//$$ {
-				//$$ PlayerManager.getInstance().setShadowState(profile, new ShadowState(true, newSp.getTimeout(),  newSp.getReason()));
+				//$$ state = new ShadowState(true, state.time(), newSp.getTimeout(), state.reason());
+				//$$ PlayerManager.getInstance().setShadowState(profile, state);
+				//$$ if (entry != null)
+				//$$ {
+					//$$ entry.updateShadowState(state);
+				//$$ }
 			//$$ }
 			//$$ return newSp;
 		//$$ }
@@ -142,11 +150,18 @@ public abstract class MixinPlayerList
 		//$$ if (player instanceof ShadowServerPlayer sp)
 		//$$ {
 			//$$ ShadowServerPlayer newSp = ShadowServerPlayer.respawnShadow(server, level, profile);
-			//$$ newSp.updateTimeAndReason(sp.getTimeout(), sp.getTime(), sp.getReason());
+			//$$ newSp.updateTimeOut(sp.getTimeout());
 			//$$ ShadowEntryList.getInstance().updateShadow(newSp);
-			//$$ if (!PlayerManager.getInstance().getShadowState(profile).enabled())
+			//$$ ShadowEntry entry = ShadowEntryList.getInstance().get(newSp);
+			//$$ ShadowState state = PlayerManager.getInstance().getShadowState(profile);
+			//$$ if (!state.enabled())
 			//$$ {
-				//$$ PlayerManager.getInstance().setShadowState(profile, new ShadowState(true, newSp.getTimeout(),  newSp.getReason()));
+				//$$ state = new ShadowState(true, state.time(), newSp.getTimeout(), state.reason());
+				//$$ PlayerManager.getInstance().setShadowState(profile, state);
+				//$$ if (entry != null)
+				//$$ {
+					//$$ entry.updateShadowState(state);
+				//$$ }
 			//$$ }
 			//$$ return newSp;
 		//$$ }
@@ -156,12 +171,18 @@ public abstract class MixinPlayerList
 		if (player instanceof ShadowServerPlayer sp)
 		{
 			ShadowServerPlayer newSp = ShadowServerPlayer.respawnShadow(server, level, profile, profilePublicKey);
-			newSp.updateTimeAndReason(sp.getTimeout(), sp.getTime(), sp.getReason());
+			newSp.updateTimeOut(sp.getTimeout());
 			ShadowEntryList.getInstance().updateShadow(newSp);
-
-			if (!PlayerManager.getInstance().getShadowState(profile).enabled())
+			ShadowEntry entry = ShadowEntryList.getInstance().get(newSp);
+			ShadowState state = PlayerManager.getInstance().getShadowState(profile);
+			if (!state.enabled())
 			{
-				PlayerManager.getInstance().setShadowState(profile, new ShadowState(true, newSp.getTimeout(),  newSp.getReason()));
+				state = new ShadowState(true, state.time(), newSp.getTimeout(), state.reason());
+				PlayerManager.getInstance().setShadowState(profile, state);
+				if (entry != null)
+				{
+					entry.updateShadowState(state);
+				}
 			}
 
 			return newSp;

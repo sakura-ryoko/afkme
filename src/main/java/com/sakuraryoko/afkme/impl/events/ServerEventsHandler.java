@@ -28,6 +28,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.dedicated.DedicatedServer;
 import net.minecraft.world.level.GameType;
 
+import com.sakuraryoko.afkme.impl.player.PlayerManager;
 import com.sakuraryoko.corelib.api.events.IServerEventsDispatch;
 
 @ApiStatus.Internal
@@ -45,7 +46,7 @@ public class ServerEventsHandler implements IServerEventsDispatch
 	@Override
 	public void onStarted(MinecraftServer server)
 	{
-		// TODO
+		PlayerManager.getInstance().onServerStarted(server);
 	}
 
 	@Override
@@ -81,7 +82,7 @@ public class ServerEventsHandler implements IServerEventsDispatch
 	@Override
 	public void onStopping(MinecraftServer server)
 	{
-		// TODO
+		PlayerManager.getInstance().onServerStop(server);
 	}
 
 	@Override

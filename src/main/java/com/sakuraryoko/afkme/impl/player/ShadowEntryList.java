@@ -25,7 +25,8 @@ import java.util.List;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import net.minecraft.server.level.ServerPlayer;
+import com.google.common.collect.ImmutableList;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import com.sakuraryoko.afkme.impl.AfkMe;
 import com.sakuraryoko.afkme.impl.player.shadow.ShadowServerPlayer;
@@ -41,19 +42,6 @@ public class ShadowEntryList
 		this.list = new ArrayList<>();
 	}
 
-	public @Nullable ShadowEntry get(@Nonnull ServerPlayer player)
-	{
-		for (ShadowEntry entry : this.list)
-		{
-			if (entry.matches(player))
-			{
-				return entry;
-			}
-		}
-
-		return null;
-	}
-
 	public @Nullable ShadowEntry get(@Nonnull ShadowServerPlayer player)
 	{
 		for (ShadowEntry entry : this.list)
@@ -67,30 +55,23 @@ public class ShadowEntryList
 		return null;
 	}
 
-	public @Nullable ShadowEntry add(@Nonnull ServerPlayer player)
+	public @Nullable ShadowEntry add(@Nonnull ShadowServerPlayer player, ShadowState state)
 	{
 		if (this.get(player) == null)
 		{
 			ShadowEntry entry = ShadowEntry.create(player);
+
+			if (state.enabled())
+			{
+				entry.updateShadowState(state);
+			}
+
 			this.list.add(entry);
 			AfkMe.debugLog("ShadowEntryList(): add({}) --> ADD", entry.name().getString());
 			return entry;
 		}
 
 		return this.get(player);
-	}
-
-	public boolean exists(@Nonnull ServerPlayer player)
-	{
-		for (ShadowEntry entry : this.list)
-		{
-			if (entry.matches(player))
-			{
-				return true;
-			}
-		}
-
-		return false;
 	}
 
 	public void updateShadow(@Nonnull ShadowServerPlayer player)
@@ -100,20 +81,6 @@ public class ShadowEntryList
 			if (entry.matches(player))
 			{
 				entry.setShadowPlayer(player);
-				break;
-			}
-		}
-	}
-
-	public void remove(@Nonnull ServerPlayer player)
-	{
-		for (ShadowEntry entry : this.list)
-		{
-			if (entry.matches(player))
-			{
-				AfkMe.debugLog("ShadowEntryList(): remove({}) --> REMOVE", entry.name().getString());
-				this.list.remove(entry);
-				entry.handler().unregisterShadowAfk();
 				break;
 			}
 		}
@@ -133,9 +100,10 @@ public class ShadowEntryList
 		}
 	}
 
-	public List<ShadowEntry> listCopy()
+	@VisibleForTesting
+	public ImmutableList<ShadowEntry> listCopy()
 	{
-		return new ArrayList<>(this.list);
+		return ImmutableList.copyOf(this.list);
 	}
 
 	public void clear()

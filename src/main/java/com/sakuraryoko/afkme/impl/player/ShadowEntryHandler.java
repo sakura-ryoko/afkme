@@ -39,13 +39,12 @@ public record ShadowEntryHandler(ShadowEntry entry)
     }
 
     @ApiStatus.Internal
-    public void registerShadowAfk(@Nonnull ShadowServerPlayer player, int time, String reason)
+    public void registerShadowAfk(@Nonnull ShadowServerPlayer player, ShadowState state)
     {
-        if (this.entry().shadowEnabled())
-        {
-            return;
-        }
+        if (this.entry().shadowEnabled()) { return; }
 
+        int time = state.time();
+        String reason = state.reason();
         long shadowTimeout = -1L;
 
         if (time > 0)
@@ -81,8 +80,13 @@ public record ShadowEntryHandler(ShadowEntry entry)
             this.sendMessage(mess2);
         }
 
-        this.entry().setShadowPlayer(player);
-        this.entry().setShadowTimeout(shadowTimeout);
+        ShadowState newState = new ShadowState(true, time, shadowTimeout, reason);
+
+        if (!newState.equals(state))
+        {
+            this.entry().updateShadowState(newState);
+            PlayerManager.getInstance().setShadowState(player.getGameProfile(), newState);
+        }
 //        this.updatePlayerList();
     }
 
@@ -127,7 +131,7 @@ public record ShadowEntryHandler(ShadowEntry entry)
 
     private IPlayerInvoker invoker()
     {
-        return (IPlayerInvoker) this.entry().player();
+        return (IPlayerInvoker) this.entry().shadowPlayer();
     }
 
     public void reset()

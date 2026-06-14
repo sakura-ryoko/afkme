@@ -30,6 +30,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 import com.sakuraryoko.afkme.impl.player.PlayerManager;
+import com.sakuraryoko.afkme.impl.player.ShadowEntry;
 import com.sakuraryoko.afkme.impl.player.ShadowEntryList;
 import com.sakuraryoko.afkme.impl.player.shadow.ShadowServerPlayer;
 import com.sakuraryoko.corelib.api.events.IPlayerEventsDispatch;
@@ -51,11 +52,7 @@ public class PlayerEventsHandler implements IPlayerEventsDispatch
 	{
 		if (player instanceof ShadowServerPlayer) { return; }
 		PlayerManager.getInstance().syncProfile(profile);
-
-		if (!ShadowEntryList.getInstance().exists(player))
-		{
-			ShadowEntryList.getInstance().add(player);
-		}
+		PlayerManager.getInstance().updatePlayerPosition(player);
 	}
 
 	@Override
@@ -67,12 +64,7 @@ public class PlayerEventsHandler implements IPlayerEventsDispatch
 	@Override
 	public void onPlayerJoinPost(ServerPlayer player, Connection connection)
 	{
-		if (player instanceof ShadowServerPlayer) { return; }
-
-		if (!ShadowEntryList.getInstance().exists(player))
-		{
-			ShadowEntryList.getInstance().add(player);
-		}
+		// TODO
 	}
 
 	@Override
@@ -80,19 +72,24 @@ public class PlayerEventsHandler implements IPlayerEventsDispatch
 	{
 		if (newPlayer instanceof ShadowServerPlayer) { return; }
 		PlayerManager.getInstance().syncProfile(newPlayer.getGameProfile());
-
-		if (!ShadowEntryList.getInstance().exists(newPlayer))
-		{
-			ShadowEntryList.getInstance().add(newPlayer);
-		}
+		PlayerManager.getInstance().updatePlayerPosition(newPlayer);
 	}
 
 	@Override
 	public void onPlayerLeave(ServerPlayer player)
 	{
-		if (player instanceof ShadowServerPlayer) { return; }
+		PlayerManager.getInstance().updatePlayerPosition(player);
 		PlayerManager.getInstance().syncProfile(player.getGameProfile());
-		ShadowEntryList.getInstance().remove(player);
+
+		if (player instanceof ShadowServerPlayer sp)
+		{
+			ShadowEntry entry = ShadowEntryList.getInstance().get(sp);
+
+			if (entry != null && entry.matches(player.getUUID()))
+			{
+				System.out.print("Shadow onPlayerLeave()?\n");
+			}
+		}
 	}
 
 	@Override

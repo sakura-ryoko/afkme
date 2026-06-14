@@ -24,13 +24,26 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import javax.annotation.Nonnull;
+import com.google.common.collect.ImmutableMap;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import com.mojang.authlib.GameProfile;
+
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.PlayerList;
+import net.minecraft.world.level.GameType;
 
 import com.sakuraryoko.afkme.impl.AfkMe;
 import com.sakuraryoko.afkme.impl.config.ConfigWrap;
 import com.sakuraryoko.afkme.impl.config.data.options.PlayerOptions;
+import com.sakuraryoko.afkme.impl.modinit.InitWrap;
+import com.sakuraryoko.afkme.impl.player.shadow.ShadowServerPlayer;
 
 public class PlayerManager
 {
@@ -38,10 +51,14 @@ public class PlayerManager
 	public static PlayerManager getInstance() { return INSTANCE; }
 
 	private final HashMap<UUID, ShadowState> playerMap;
+	private final HashMap<UUID, PosState> posMap;
+	private final HashMap<UUID, GameState> gameMap;
 
 	private PlayerManager()
 	{
 		this.playerMap = new HashMap<>();
+		this.posMap = new HashMap<>();
+		this.gameMap = new HashMap<>();
 	}
 
 	public void syncProfile(GameProfile profile)
@@ -60,6 +77,7 @@ public class PlayerManager
 
 		// Doesn't exist in config --> Add
 		this.addConfig(profile);
+		this.addOrUpdateProfile(profile, ShadowState.DEFAULT);
 	}
 
 	public void syncFromConfig(PlayerOptions opt)
@@ -70,6 +88,9 @@ public class PlayerManager
 	private void addOrUpdateProfile(GameProfile profile, ShadowState state)
 	{
 		UUID uuid = ProfileWrap.id(profile);
+
+		this.posMap.putIfAbsent(uuid, PosWrap.defaultPos());
+		this.gameMap.putIfAbsent(uuid, GameWrap.defMode());
 
 		if (this.playerMap.containsKey(uuid) && this.playerMap.get(uuid) != state)
 		{
@@ -109,11 +130,12 @@ public class PlayerManager
 	private void addConfig(GameProfile profile)
 	{
 		List<PlayerOptions> config = new ArrayList<>(ConfigWrap.players());
+		UUID uuid = ProfileWrap.id(profile);
 		boolean exists = false;
 
 		for (PlayerOptions entry : config)
 		{
-			if (entry.uuid.equals(ProfileWrap.id(profile)))
+			if (entry.uuid.equals(uuid))
 			{
 				exists = true;
 			}
@@ -121,7 +143,19 @@ public class PlayerManager
 
 		if (!exists)
 		{
-			ConfigWrap.players().add(PlayerOptions.fromProfile(profile, ShadowState.DEFAULT));
+			PlayerOptions opt = PlayerOptions.fromProfile(profile, ShadowState.DEFAULT);
+
+			if (this.posMap.containsKey(uuid))
+			{
+				opt.pos = this.posMap.get(uuid);
+			}
+
+			if (this.gameMap.containsKey(uuid))
+			{
+				opt.game = this.gameMap.get(uuid);
+			}
+
+			ConfigWrap.players().add(opt);
 		}
 
 		if (ConfigWrap.mainOpt().debugMode)
@@ -133,14 +167,26 @@ public class PlayerManager
 	private void setConfig(GameProfile profile, ShadowState state)
 	{
 		List<PlayerOptions> config = new ArrayList<>(ConfigWrap.players());
+		UUID uuid = ProfileWrap.id(profile);
 		boolean dirty = false;
 
 		for (PlayerOptions entry : config)
 		{
-			if (entry.uuid.equals(ProfileWrap.id(profile)) &&
+			if (entry.uuid.equals(uuid) &&
 				!entry.state.equals(state))
 			{
 				entry.state = state;
+
+				if (this.posMap.containsKey(uuid))
+				{
+					entry.pos = this.posMap.get(uuid);
+				}
+
+				if (this.gameMap.containsKey(uuid))
+				{
+					entry.game = this.gameMap.get(uuid);
+				}
+
 				dirty = true;
 			}
 		}
@@ -151,7 +197,19 @@ public class PlayerManager
 
 			for (PlayerOptions entry : config)
 			{
-				ConfigWrap.players().add(new PlayerOptions(entry));
+				PlayerOptions opt = new PlayerOptions(entry);
+
+				if (this.posMap.containsKey(uuid))
+				{
+					opt.pos = this.posMap.get(uuid);
+				}
+
+				if (this.gameMap.containsKey(uuid))
+				{
+					opt.game = this.gameMap.get(uuid);
+				}
+
+				ConfigWrap.players().add(opt);
 			}
 		}
 	}
@@ -191,6 +249,215 @@ public class PlayerManager
 		if (ConfigWrap.mainOpt().debugMode)
 		{
 			AfkMe.LOGGER.warn("setShadowState: player: ['{}'/{}] state: {}", ProfileWrap.name(profile), ProfileWrap.id(profile), state.toString());
+		}
+	}
+
+	public PosState getPosState(@NotNull UUID uuid)
+	{
+		if (this.posMap.containsKey(uuid))
+		{
+			return this.posMap.get(uuid);
+		}
+
+		List<PlayerOptions> config = new ArrayList<>(ConfigWrap.players());
+
+		for (PlayerOptions entry : config)
+		{
+			if (entry.uuid.equals(uuid))
+			{
+				return entry.pos;
+			}
+		}
+
+		return PosWrap.defaultPos();
+	}
+
+	public GameState getGameMode(@NotNull UUID uuid)
+	{
+		if (this.gameMap.containsKey(uuid))
+		{
+			return this.gameMap.get(uuid);
+		}
+
+		List<PlayerOptions> config = new ArrayList<>(ConfigWrap.players());
+
+		for (PlayerOptions entry : config)
+		{
+			if (entry.uuid.equals(uuid))
+			{
+				return entry.game;
+			}
+		}
+
+		return GameWrap.defMode();
+	}
+
+	public void updatePlayerPosition(@Nonnull ServerPlayer player)
+	{
+		PosState pos = PosWrap.of(player);
+		GameState game = GameWrap.of(player);
+		UUID uuid = player.getUUID();
+		this.posMap.put(uuid, pos);
+		this.gameMap.put(uuid, game);
+	}
+
+	@VisibleForTesting
+	public ImmutableMap<UUID, ShadowState> getPlayerMap()
+	{
+		return ImmutableMap.copyOf(this.playerMap);
+	}
+
+	@VisibleForTesting
+	public Component getDebugFormatted(UUID uuid)
+	{
+		ShadowState state = this.playerMap.getOrDefault(uuid, ShadowState.DEFAULT);
+		PosState pos = this.posMap.getOrDefault(uuid, PosWrap.defaultPos());
+		GameState game = this.gameMap.getOrDefault(uuid, GameWrap.defMode());
+		MutableComponent text = Component.literal("");
+
+		text.append(
+				InitWrap.text().formatText("\n - §7UUID: ")
+		).append(
+				InitWrap.text().formatText(uuid.toString())
+		).append(
+				InitWrap.text().formatText("\n - §7Shadow: ")
+		).append(
+				state.getDebugFormatted()
+		).append(
+				InitWrap.text().formatText("\n - §7Game: ")
+		).append(
+				game.getDebugFormatted()
+		).append(
+				InitWrap.text().formatText("\n - §7Position: ")
+		).append(
+				InitWrap.text().formatText(
+						String.format("§b%s §f[%d, %d, %d]§r", pos.location(), pos.x(), pos.y(), pos.z())
+				)
+		);
+
+		return text;
+	}
+
+	public void onServerStop(@Nonnull MinecraftServer server)
+	{
+		PlayerList playerList = server.getPlayerList();
+		List<ServerPlayer> players = playerList.getPlayers();
+
+		for (ServerPlayer player : players)
+		{
+			String name = player.getName().getString();
+			UUID uuid = player.getUUID();
+			ShadowState state = this.playerMap.getOrDefault(uuid, ShadowState.DEFAULT);
+			PosState pos = PosWrap.of(player);
+			GameState game = GameWrap.of(player);
+
+			if (player instanceof ShadowServerPlayer shadow)
+			{
+				ShadowEntry entry = ShadowEntryList.getInstance().get(shadow);
+
+				if (entry == null)
+				{
+					entry = ShadowEntryList.getInstance().add(shadow, state);
+				}
+
+				if (entry != null)
+				{
+					state = new ShadowState(true, state.time(), entry.shadowTimeout(), state.reason());
+				}
+				else
+				{
+					state = new ShadowState(true, state.time(), shadow.getTimeout(), state.reason());
+				}
+			}
+
+			List<PlayerOptions> config = new ArrayList<>(ConfigWrap.players());
+			boolean found = false;
+			boolean dirty = false;
+
+			for (PlayerOptions entry : config)
+			{
+				if (entry.uuid.equals(uuid))
+				{
+					if (!entry.state.equals(state))
+					{
+						entry.state = state;
+						dirty = true;
+					}
+					if (!entry.pos.equals(pos))
+					{
+						entry.pos = pos;
+						dirty = true;
+					}
+					if (!entry.game.equals(game))
+					{
+						entry.game = game;
+						dirty = true;
+					}
+					if (!entry.name.equals(name))
+					{
+						entry.name = name;
+						dirty = true;
+					}
+
+					found = true;
+				}
+			}
+
+			if (!found)
+			{
+				PlayerOptions opt = PlayerOptions.fromProfile(player.getGameProfile(), state);
+				opt.pos = pos;
+				opt.game = game;
+				config.add(opt);
+				dirty = true;
+			}
+
+			if (dirty)
+			{
+				// FIXME
+				ConfigWrap.players().clear();
+
+				for (PlayerOptions entry : config)
+				{
+					PlayerOptions opt = new PlayerOptions(entry);
+					ConfigWrap.players().add(opt);
+				}
+			}
+		}
+	}
+
+	public void onServerStarted(@Nonnull MinecraftServer server)
+	{
+		List<PlayerOptions> config = new ArrayList<>(ConfigWrap.players());
+		PlayerList playerList = server.getPlayerList();
+		List<ServerPlayer> players = playerList.getPlayers();
+
+		for (PlayerOptions entry : config)
+		{
+			if (entry != null)
+			{
+				UUID uuid = entry.uuid;
+				ShadowState state = entry.state;
+
+				if (state.enabled())
+				{
+					boolean exists = false;
+
+					for (ServerPlayer player : players)
+					{
+						if (player.getUUID().equals(uuid))
+						{
+							exists = true;
+							break;
+						}
+					}
+
+					if (!exists)
+					{
+						ShadowServerPlayer.createShadowFromConfig(server, entry);
+					}
+				}
+			}
 		}
 	}
 }

@@ -21,15 +21,21 @@
 package com.sakuraryoko.afkme.impl.commands.server;
 
 import java.util.List;
+import java.util.UUID;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import org.jetbrains.annotations.ApiStatus;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.level.ServerPlayer;
 
 import com.sakuraryoko.afkme.impl.AfkMe;
 import com.sakuraryoko.afkme.impl.Reference;
@@ -37,10 +43,15 @@ import com.sakuraryoko.afkme.impl.commands.PermsWrap;
 import com.sakuraryoko.afkme.impl.config.AfkMeConfigHandler;
 import com.sakuraryoko.afkme.impl.modinit.AfkMeInit;
 import com.sakuraryoko.afkme.impl.modinit.InitWrap;
+import com.sakuraryoko.afkme.impl.player.PlayerManager;
+import com.sakuraryoko.afkme.impl.player.ShadowEntry;
+import com.sakuraryoko.afkme.impl.player.ShadowEntryList;
+import com.sakuraryoko.afkme.impl.player.ShadowState;
 import com.sakuraryoko.corelib.api.commands.IServerCommand;
 import com.sakuraryoko.corelib.api.modinit.ModInitData;
 import com.sakuraryoko.corelib.impl.config.ConfigManager;
 
+import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
 
 @ApiStatus.Internal
@@ -60,6 +71,19 @@ public class AfkMeAdminCommand implements IServerCommand
                         .then(literal("reload")
                                       .requires(PermsWrap.check(this.getNode()+".reload", 4))
                                       .executes(this::reload)
+                        )
+                        .then(literal("list")
+                                      .requires(PermsWrap.check(this.getNode()+".list", 4))
+                                      .executes(this::list)
+                        )
+                        .then(literal("info")
+                                      .requires(PermsWrap.check(this.getNode()+".info", 4))
+                                      .executes(this::infoPlayer)
+                                      .then(argument("player", EntityArgument.player())
+                                                    .executes(ctx ->
+                                                                      this.infoPlayer(ctx, EntityArgument.getPlayer(ctx, "player"))
+                                                    )
+                                      )
                         )
         );
     }
@@ -121,6 +145,100 @@ public class AfkMeAdminCommand implements IServerCommand
         ConfigManager.getInstance().reloadEach(AfkMeConfigHandler.getInstance());
         String user = ctx.getSource().getTextName();
         AfkMe.LOGGER.info("{} has reloaded the configuration.", user);
+
+        return 1;
+    }
+
+    private int list(CommandContext<CommandSourceStack> ctx)
+    {
+	    ImmutableMap<UUID, ShadowState> playerMap = PlayerManager.getInstance().getPlayerMap();
+        ImmutableList<ShadowEntry> list = ShadowEntryList.getInstance().listCopy();
+        MutableComponent text = Component.literal("");
+
+        text.append(
+                InitWrap.text().formatText("§dPlayer Map:")
+        );
+
+        int count = 0;
+
+        for (UUID key : playerMap.keySet())
+        {
+            text.append(
+                    InitWrap.text().formatText(
+                            String.format("\n§9[Entry: %02d]", count)
+                    )
+            ).append(
+                    PlayerManager.getInstance().getDebugFormatted(key)
+            );
+            count++;
+        }
+
+        text.append(
+                String.format("\n§6(%d total)§r", count)
+        );
+
+        count = 0;
+
+        text.append(
+                InitWrap.text().formatText("\n§dShadow List:")
+        );
+
+        for (ShadowEntry entry : list)
+        {
+            text.append(
+                    InitWrap.text().formatText(
+                            String.format("\n§9[Entry: %02d]", count)
+                    )
+            ).append(
+                    entry.getDebugFormatted()
+            );
+
+            count++;
+        }
+
+        text.append(
+                String.format("\n§6(%d total)§r", count)
+        );
+
+        //#if MC >= 1.20.1
+        //$$ ctx.getSource().sendSuccess(() -> text, false);
+        //#else
+        ctx.getSource().sendSuccess(text, false);
+        //#endif
+
+        return 1;
+    }
+
+    private int infoPlayer(CommandContext<CommandSourceStack> ctx)
+    {
+        try
+        {
+            return this.infoPlayer(ctx, ctx.getSource().getPlayerOrException());
+        }
+        catch (CommandSyntaxException err)
+        {
+            AfkMe.LOGGER.warn("CMD:infoPlayer: Syntax Error; {}", err.getLocalizedMessage());
+            return 0;
+        }
+    }
+
+    private int infoPlayer(CommandContext<CommandSourceStack> ctx, ServerPlayer player)
+    {
+        MutableComponent text = Component.literal("");
+
+        text.append(
+                InitWrap.text().formatText("§7Player Info for: ")
+        ).append(
+                player.getDisplayName()
+        ).append(
+                PlayerManager.getInstance().getDebugFormatted(player.getUUID())
+        );
+
+        //#if MC >= 1.20.1
+        //$$ ctx.getSource().sendSuccess(() -> text, false);
+        //#else
+        ctx.getSource().sendSuccess(text, false);
+        //#endif
 
         return 1;
     }

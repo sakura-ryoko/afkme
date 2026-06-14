@@ -21,23 +21,27 @@
 package com.sakuraryoko.afkme.impl.player;
 
 import java.time.ZonedDateTime;
+import java.util.Objects;
+import java.util.UUID;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import org.jetbrains.annotations.VisibleForTesting;
 
 import com.mojang.authlib.GameProfile;
 import net.minecraft.Util;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.MutableComponent;
 
 import com.sakuraryoko.afkme.impl.config.ConfigWrap;
+import com.sakuraryoko.afkme.impl.modinit.InitWrap;
 import com.sakuraryoko.afkme.impl.player.shadow.ShadowServerPlayer;
 import com.sakuraryoko.corelib.api.time.DurationFormat;
 import com.sakuraryoko.corelib.api.time.TimeFormat;
 
 public class ShadowEntry
 {
-	private ServerPlayer player;
-	private ShadowServerPlayer shadowPlayer;
+	private @Nullable ShadowServerPlayer shadowPlayer;
 	private final ShadowEntryHandler handler;
 	private boolean shadowEnabled;
 	private long shadowStartTimeMs;
@@ -45,9 +49,8 @@ public class ShadowEntry
 	private long shadowTimeout;
 	private String reason;
 
-	private ShadowEntry(@Nonnull ServerPlayer player)
+	private ShadowEntry()
 	{
-		this.player = player;
 		this.shadowPlayer = null;
 		this.shadowEnabled = false;
 		this.shadowStartTimeMs = -1L;
@@ -57,9 +60,11 @@ public class ShadowEntry
 		this.handler = new ShadowEntryHandler(this);
 	}
 
-	public static ShadowEntry create(@Nonnull ServerPlayer player)
+	public static ShadowEntry create(@Nonnull ShadowServerPlayer player)
 	{
-		return new ShadowEntry(player);
+		ShadowEntry newEntry = new ShadowEntry();
+		newEntry.setShadowPlayer(player);
+		return newEntry;
 	}
 
 	public ShadowEntryHandler handler()
@@ -67,25 +72,24 @@ public class ShadowEntry
 		return this.handler;
 	}
 
-	public ServerPlayer player()
-	{
-		return this.player;
-	}
-
-	public Component name()
-	{
-		return this.player.getName();
-	}
-
-	public GameProfile profile()
-	{
-		return this.player.getGameProfile();
-	}
-
 	@Nullable
 	public ShadowServerPlayer shadowPlayer()
 	{
 		return this.shadowPlayer;
+	}
+
+	public Component name()
+	{
+		return this.shadowPlayer != null
+		       ? this.shadowPlayer.getName()
+		       : Component.empty();
+	}
+
+	public @Nullable GameProfile profile()
+	{
+		return this.shadowPlayer != null
+		       ? this.shadowPlayer.getGameProfile()
+		       : null;
 	}
 
 	public boolean shadowEnabled()
@@ -157,16 +161,14 @@ public class ShadowEntry
 	public void setShadowPlayer(@Nonnull ShadowServerPlayer player)
 	{
 		this.shadowPlayer = player;
-		this.shadowEnabled = true;
+	}
 
-		if (this.shadowTimeout() <= 0L)
-		{
-			this.setShadowTimeout(player.getTimeout());
-		}
-		if (this.reason().isEmpty())
-		{
-			this.setReason(player.getReason());
-		}
+	public void updateShadowState(ShadowState state)
+	{
+		this.shadowEnabled = state.enabled();
+		this.setShadowTimeout(state.timeout());
+		this.setReason(state.reason());
+
 		if (this.shadowStartTimeMs() <= 1L)
 		{
 			this.setShadowStartTimeMs(Util.getMillis());
@@ -180,7 +182,6 @@ public class ShadowEntry
 	public void clearShadow()
 	{
 		this.shadowPlayer = null;
-		this.reset();
 	}
 
 	public void setShadowStartTimeMs(long time)
@@ -209,12 +210,6 @@ public class ShadowEntry
         return this.shadowTimeout > 0L;
     }
 
-	public boolean matches(@Nonnull ServerPlayer player)
-	{
-		return  this.player.getUUID().equals(player.getUUID()) ||
-				this.player.equals(player);
-	}
-
 	public boolean matches(@Nonnull ShadowServerPlayer player)
 	{
 		if (this.shadowPlayer == null) { return false; }
@@ -222,6 +217,68 @@ public class ShadowEntry
 				this.shadowPlayer.equals(player);
 	}
 
+	public boolean matches(UUID uuid)
+	{
+		if (this.shadowPlayer == null) { return false; }
+		return  this.shadowPlayer.getUUID().equals(uuid);
+	}
+
+	@VisibleForTesting
+	public Component getDebugFormatted()
+	{
+		MutableComponent text = Component.literal("");
+
+		text.append(
+				InitWrap.text().formatText("§r\n - §7UUID: ")
+		).append(
+				InitWrap.text().formatText(
+					this.profile() != null
+					? ProfileWrap.id(Objects.requireNonNull(this.profile())).toString()
+					: "§c<NULL>"
+				)
+		);
+
+		if (this.shadowPlayer != null)
+		{
+			text.append(
+					InitWrap.text().formatText("§r\n - §7Shadow Player Name: ")
+			).append(this.name());
+		}
+		else
+		{
+			text.append(
+					InitWrap.text().formatText("§r\n - §cNO PLAYER")
+			);
+		}
+
+		text.append(
+				InitWrap.text().formatText("§r\n - §7Shadow: ")
+		).append(
+				InitWrap.text().formatText(this.shadowEnabled ? "§cEnabled" : "§aDisabled")
+		);
+		text.append(
+				InitWrap.text().formatText("§r\n - §7Timeout: ")
+		).append(
+				InitWrap.text().formatText(this.shadowTimeout > 1L ? this.getShadowTimeoutString() : "§eN/A")
+		);
+		text.append(
+				InitWrap.text().formatText("§r\n - §7Duration: ")
+		).append(
+				InitWrap.text().formatText(this.shadowStartTimeMs > 1L ? this.getShadowDurationString() : "§eN/A")
+		);
+		text.append(
+				InitWrap.text().formatText("§r\n - §7Since: ")
+		).append(
+				InitWrap.text().formatText(this.shadowStartTimeEpoch > 1L ? this.getShadowTimeoutString() : "§eN/A")
+		);
+		text.append(
+				InitWrap.text().formatText("§r\n - §7Reason: ")
+		).append(
+				InitWrap.text().formatText(this.reason.isEmpty() ? "§e<empty>" : this.reason())
+		);
+
+		return text;
+	}
 	public void reset()
 	{
 		this.handler.reset();
