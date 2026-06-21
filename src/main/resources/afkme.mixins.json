@@ -12,7 +12,8 @@
         "MixinPlayer",
         "MixinPlayerList",
         "MixinServerLoginPacketListenerImpl",
-        "MixinServerPlayer",
+        "MixinServerPlayer_core",
+        "MixinServerPlayer_fakeMovement",
         "MixinTickRateManager"
     ],
     "client": [

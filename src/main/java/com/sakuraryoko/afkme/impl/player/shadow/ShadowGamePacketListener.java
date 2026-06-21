@@ -61,10 +61,13 @@ public class ShadowGamePacketListener extends ServerGamePacketListenerImpl
 	}
 	//#endif
 
+	//#if MC >= 1.20.2
+	//#else
 	@Override
 	public void send(@NonNull Packet<?> packet)
 	{
 	}
+	//#endif
 
 	@Override
 	public void disconnect(@NonNull Component message)

@@ -698,13 +698,13 @@ public class ShadowServerPlayer extends ServerPlayer
 		return "127.0.0.1";
 	}
 
-	//#if MC >= 1.20.1
-	//$$ @Override
-	//$$ protected void checkFallDamage(double y, boolean onGround, @NonNull BlockState state, @NonNull BlockPos pos)
-	//$$ {
-		//$$ this.doCheckFallDamage(0.0, y, 0.0, onGround);
-	//$$ }
-	//#endif
+//	//#if MC >= 1.20.1
+//	//$$ @Override
+//	//$$ protected void checkFallDamage(double y, boolean onGround, @NonNull BlockState state, @NonNull BlockPos pos)
+//	//$$ {
+//		//$$ this.doCheckFallDamage(0.0, y, 0.0, onGround);
+//	//$$ }
+//	//#endif
 
 	@Override
 	//#if MC >= 1.21.2

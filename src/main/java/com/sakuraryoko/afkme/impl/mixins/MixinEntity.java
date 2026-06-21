@@ -58,7 +58,8 @@ public abstract class MixinEntity
 	//#endif
 	private void afkme$isControlledByLocalInstance(CallbackInfoReturnable<Boolean> cir)
 	{
-		if (this.getControllingPassenger() instanceof ShadowServerPlayer)
+		if ((Object) this instanceof ShadowServerPlayer ||
+			this.getControllingPassenger() instanceof ShadowServerPlayer)
 		{
 			cir.setReturnValue(!this.level.isClientSide());
 		}

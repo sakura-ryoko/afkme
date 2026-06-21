@@ -21,12 +21,19 @@
 package com.sakuraryoko.afkme.impl.mixins;
 
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.Nullable;
 
+import com.mojang.authlib.GameProfile;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.player.Player;
+//#if MC >= 1.20.2
+//$$ import net.minecraft.server.level.ClientInformation;
+//#else
+import net.minecraft.world.entity.player.ProfilePublicKey;
+//#endif
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -41,23 +48,37 @@ import com.sakuraryoko.afkme.impl.player.interfaces.IPlayerInvoker;
 
 @Mixin(ServerPlayer.class)
 @ApiStatus.Internal
-public abstract class MixinServerPlayer extends Entity implements IPlayerInvoker
+public abstract class MixinServerPlayer_core extends Player implements IPlayerInvoker
 {
-	//#if MC >= 26.1
+	//#if MC >= 1.21.10
 	//$$ @Shadow @Final private MinecraftServer server;
 	//#else
-	@Shadow
-	@Final
-	public MinecraftServer server;
+	@Shadow @Final public MinecraftServer server;
 	//#endif
 	@Shadow public ServerGamePacketListenerImpl connection;
-	@Unique
-	public ServerPlayer player = (ServerPlayer) (Object) this;
+	@Unique public ServerPlayer player = (ServerPlayer) (Object) this;
 
-	public MixinServerPlayer(EntityType<?> entityType, Level level)
+	//#if MC >= 1.21.8
+	//$$ public MixinServerPlayer_core(MinecraftServer server, Level level, GameProfile gameProfile, ClientInformation ci)
+	//$$ {
+		//$$ super(level, gameProfile);
+	//$$ }
+	//#elseif MC >= 1.20.2
+	//$$ public MixinServerPlayer_core(Level level, BlockPos pos, float yRot, GameProfile gameProfile, ClientInformation ci)
+	//$$ {
+		//$$ super(level, pos, yRot, gameProfile);
+	//$$ }
+	//#elseif MC >= 1.19.3
+	//$$ public MixinServerPlayer_core(Level level, BlockPos pos, float yRot, GameProfile gameProfile)
+	//$$ {
+		//$$ super(level, pos, yRot, gameProfile);
+	//$$ }
+	//#else
+	public MixinServerPlayer_core(Level level, BlockPos pos, float yRot, GameProfile gameProfile, @Nullable ProfilePublicKey profilePublicKey)
 	{
-		super(entityType, level);
+		super(level, pos, yRot, gameProfile, profilePublicKey);
 	}
+	//#endif
 
 	@Override
 	public ServerPlayer afkme$player()
