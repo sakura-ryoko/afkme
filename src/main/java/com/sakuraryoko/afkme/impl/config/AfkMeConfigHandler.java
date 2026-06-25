@@ -23,6 +23,7 @@ package com.sakuraryoko.afkme.impl.config;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.sakuraryoko.afkme.impl.config.data.options.AfkMeOptions;
 import org.jetbrains.annotations.ApiStatus;
 
 import com.sakuraryoko.afkme.impl.AfkMe;
@@ -82,6 +83,11 @@ public class AfkMeConfigHandler implements IConfigDispatch
         return CONFIG.MAIN;
     }
 
+    public AfkMeOptions getAfkMeOptions()
+    {
+        return CONFIG.AFK_ME;
+    }
+
     public MessageOptions getMessageOptions()
     {
         return CONFIG.MESS;
@@ -137,6 +143,7 @@ public class AfkMeConfigHandler implements IConfigDispatch
         // Set default values
         config.config_date = TimeFormat.RFC1123.formatNow(null);
         config.MAIN = new MainOptions();
+        config.AFK_ME = new AfkMeOptions();
         config.MESS = new MessageOptions();
         config.PLAYERS = new ArrayList<>();
 
@@ -156,6 +163,7 @@ public class AfkMeConfigHandler implements IConfigDispatch
 
         // Copy Incoming Config
         CONFIG.MAIN.copy(newConf.MAIN);
+        CONFIG.AFK_ME.copy(newConf.AFK_ME);
         CONFIG.MESS.copy(newConf.MESS);
 
         // Copy Players Config

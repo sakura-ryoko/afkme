@@ -29,9 +29,6 @@ public class MainOptions implements IConfigOption
 {
     public boolean afkMeEnabled;
     public boolean debugMode;
-    public boolean resetHealthUponDeath;
-    public int defaultShadowTimeout;
-    public int afkMeCommandPermissions;
 
     public MainOptions()
     {
@@ -42,9 +39,6 @@ public class MainOptions implements IConfigOption
     {
         this.afkMeEnabled = true;
         this.debugMode = false;
-        this.resetHealthUponDeath = false;
-        this.defaultShadowTimeout = 129600;
-        this.afkMeCommandPermissions = 0;
     }
 
     @Override
@@ -54,9 +48,6 @@ public class MainOptions implements IConfigOption
 
         this.afkMeEnabled = opts.afkMeEnabled;
         this.debugMode = opts.debugMode;
-        this.resetHealthUponDeath = opts.resetHealthUponDeath;
-        this.defaultShadowTimeout = opts.defaultShadowTimeout;
-        this.afkMeCommandPermissions = opts.afkMeCommandPermissions;
 
         return this;
     }

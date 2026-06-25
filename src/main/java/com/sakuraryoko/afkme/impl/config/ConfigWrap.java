@@ -21,6 +21,8 @@
 package com.sakuraryoko.afkme.impl.config;
 
 import java.util.List;
+
+import com.sakuraryoko.afkme.impl.config.data.options.AfkMeOptions;
 import org.jetbrains.annotations.ApiStatus;
 
 import com.sakuraryoko.afkme.impl.config.data.options.MainOptions;
@@ -33,6 +35,11 @@ public class ConfigWrap
     public static MainOptions mainOpt()
     {
         return AfkMeConfigHandler.getInstance().getMainOptions();
+    }
+
+    public static AfkMeOptions afkMe()
+    {
+        return AfkMeConfigHandler.getInstance().getAfkMeOptions();
     }
 
     public static MessageOptions mess()

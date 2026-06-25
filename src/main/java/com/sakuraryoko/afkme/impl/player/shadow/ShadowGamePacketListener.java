@@ -79,7 +79,7 @@ public class ShadowGamePacketListener extends ServerGamePacketListenerImpl
 			((ShadowServerPlayer) this.player).kill(message);
 		}
 
-		if (!ConfigWrap.mainOpt().resetHealthUponDeath)
+		if (!ConfigWrap.afkMe().resetHealthUponDeath)
 		{
 			ShadowServerPlayer sp = (ShadowServerPlayer) this.player;
 			sp.killShadow();

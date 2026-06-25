@@ -32,6 +32,7 @@ import com.sakuraryoko.corelib.api.time.TimeFormat;
 public class MessageOptions implements IConfigOption
 {
 	public boolean broadcastMessages;
+	public boolean hideShadowJoin;
 	public boolean displayDuration;
 	public String defaultShadowReason;
 	public String shadowKickMessage;
@@ -53,6 +54,7 @@ public class MessageOptions implements IConfigOption
 	public void defaults()
 	{
 		this.broadcastMessages = false;
+		this.hideShadowJoin = false;
 		this.displayDuration = true;
 		this.defaultShadowReason = "§7shadowing§r";
 		this.shadowKickMessage = "§6Shadow activation§r";
@@ -74,6 +76,7 @@ public class MessageOptions implements IConfigOption
 		MessageOptions opts = (MessageOptions) opt;
 
 		this.broadcastMessages = opts.broadcastMessages;
+		this.hideShadowJoin = opts.hideShadowJoin;
 		this.displayDuration = opts.displayDuration;
 		this.defaultShadowReason = opts.defaultShadowReason;
 		this.shadowKickMessage = opts.shadowKickMessage;

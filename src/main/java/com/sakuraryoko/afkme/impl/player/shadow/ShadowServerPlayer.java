@@ -22,6 +22,8 @@ package com.sakuraryoko.afkme.impl.player.shadow;
 
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+
+import com.sakuraryoko.afkme.impl.player.interfaces.IPlayerListInvoker;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -334,6 +336,11 @@ public class ShadowServerPlayer extends ServerPlayer
 			kickMsg = Component.translatable("multiplayer.disconnect.duplicate_login");
 		}
 
+		if (ConfigWrap.mess().hideShadowJoin)
+		{
+			((IPlayerListInvoker) server.getPlayerList()).afkme$toggleBroadcastSystemMessage(true);
+		}
+
 		server.getPlayerList().remove(player);
 		player.connection.disconnect(kickMsg);
 
@@ -362,6 +369,8 @@ public class ShadowServerPlayer extends ServerPlayer
 		//#else
 		server.getPlayerList().placeNewPlayer(new ShadowConnection(PacketFlow.SERVERBOUND), shadow);
 		//#endif
+
+		((IPlayerListInvoker) server.getPlayerList()).afkme$toggleBroadcastSystemMessage(false);
 
 		//#if MC >= 1.21.10
 		//$$ loadPlayerNbt(shadow);
@@ -485,31 +494,29 @@ public class ShadowServerPlayer extends ServerPlayer
 		}
 	}
 
-//	@Override
-//	//#if MC >= 1.21.2
-//	//$$ public boolean hurtServer(@NonNull ServerLevel level, @NonNull DamageSource damageSource, float amount)
-//	//#else
-//	public boolean hurt(@NonNull DamageSource damageSource, float amount)
-//	//#endif
-//	{
-//		ShadowEntry entry = ShadowEntryList.getInstance().get(this);
-//
-//		if (entry != null && entry.shadowEnabled() &&
-//			ConfigWrap.mess().shadowInvulnerable)
-//		{
-//			// Works just like disable damage; so let's just
-//			// stop the default behavior from glitching things.
-//			// If you want to be able to kill shadow bots;
-//			// then just disable this config.
-//			return false;
-//		}
-//
-//		//#if MC >= 1.21.2
-//		//$$ return super.hurtServer(level, damageSource, amount);
-//		//#else
-//		return super.hurt(damageSource, amount);
-//		//#endif
-//	}
+	@Override
+	//#if MC >= 1.21.2
+	//$$ public boolean hurtServer(@NonNull ServerLevel level, @NonNull DamageSource damageSource, float amount)
+	//#else
+	public boolean hurt(@NonNull DamageSource damageSource, float amount)
+	//#endif
+	{
+		ShadowEntry entry = ShadowEntryList.getInstance().get(this);
+
+		if (entry != null && entry.shadowEnabled() &&
+			ConfigWrap.afkMe().afkMeDisableDamage)
+		{
+			// If you want to be able to kill shadow bots;
+			// then just disable this config.
+			return false;
+		}
+
+		//#if MC >= 1.21.2
+		//$$ return super.hurtServer(level, damageSource, amount);
+		//#else
+		return super.hurt(damageSource, amount);
+		//#endif
+	}
 
 	@Override
 	//#if MC >= 1.21.2
@@ -653,7 +660,7 @@ public class ShadowServerPlayer extends ServerPlayer
 		this.dismount();
 		super.die(damageSource);
 
-		if (ConfigWrap.mainOpt().resetHealthUponDeath)
+		if (ConfigWrap.afkMe().resetHealthUponDeath)
 		{
 			this.setHealth(20.0F);
 			this.foodData = new FoodData();

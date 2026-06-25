@@ -54,13 +54,13 @@ public class AfkMeCommand implements IServerCommand
     {
         dispatcher.register(
                 literal(this.getName())
-                        .requires(PermsWrap.check(this.getNode(), ConfigWrap.mainOpt().afkMeCommandPermissions))
+                        .requires(PermsWrap.check(this.getNode(), ConfigWrap.afkMe().afkMeCommandPermissions))
                         .executes(ctx -> this.setAfkMe(ctx, -1, ""))
                         .then(argument("time", IntegerArgumentType.integer(1))
-                                      .requires(PermsWrap.check(this.getNode(), ConfigWrap.mainOpt().afkMeCommandPermissions))
+                                      .requires(PermsWrap.check(this.getNode(), ConfigWrap.afkMe().afkMeCommandPermissions))
                                       .executes(ctx -> this.setAfkMe(ctx, IntegerArgumentType.getInteger(ctx, "time"), ""))
                                       .then(argument("reason", StringArgumentType.greedyString())
-                                                    .requires(PermsWrap.check(this.getNode(), ConfigWrap.mainOpt().afkMeCommandPermissions))
+                                                    .requires(PermsWrap.check(this.getNode(), ConfigWrap.afkMe().afkMeCommandPermissions))
                                                     .executes(ctx -> this.setAfkMe(ctx, IntegerArgumentType.getInteger(ctx, "time"), StringArgumentType.getString(ctx, "reason")))
                                       )
                         )
@@ -119,7 +119,7 @@ public class AfkMeCommand implements IServerCommand
 
         if (time < 0)
         {
-            time = ConfigWrap.mainOpt().defaultShadowTimeout;
+            time = ConfigWrap.afkMe().defaultShadowTimeout;
 
             if (time < 0)
             {

@@ -23,6 +23,7 @@ package com.sakuraryoko.afkme.impl.config.data;
 import java.util.ArrayList;
 import java.util.List;
 import com.google.gson.annotations.SerializedName;
+import com.sakuraryoko.afkme.impl.config.data.options.AfkMeOptions;
 import org.jetbrains.annotations.ApiStatus;
 
 import com.sakuraryoko.afkme.impl.config.data.options.MainOptions;
@@ -41,6 +42,9 @@ public class AfkMeConfigData implements IConfigData
 
     @SerializedName("main")
     public MainOptions MAIN = new MainOptions();
+
+    @SerializedName("afk_me")
+    public AfkMeOptions AFK_ME = new AfkMeOptions();
 
     @SerializedName("messages")
     public MessageOptions MESS = new MessageOptions();
