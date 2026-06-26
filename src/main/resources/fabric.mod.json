@@ -14,18 +14,18 @@
   },
   "license": "LGPL-3.0",
 
-  "icon": "assets/afkme/icon.png",
+  "icon": "assets/unplugged_afk/icon.png",
 
   "environment": "*",
   "entrypoints": {
     "main": [
-      "com.sakuraryoko.afkme.impl.AfkMe"
+      "com.sakuraryoko.unplugged_afk.impl.UnpluggedAfk"
     ]
   },
   "mixins": [
-    "afkme.mixins.json"
+    "unplugged_afk.mixins.json"
   ],
-  "accessWidener": "afkme.accesswidener",
+  "accessWidener": "unplugged_afk.accesswidener",
 
   "depends": {
     "fabricloader": ">=0.11.4",

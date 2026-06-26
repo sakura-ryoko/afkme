@@ -99,8 +99,8 @@ dependencies {
 //	autoCompileOnly "maven.modrinth:vanish:${project.vanish_compat_version}"
 }
 
-String MIXIN_CONFIG_PATH = 'afkme.mixins.json'
-//String LANG_DIR = 'assets/afkme/lang'
+String MIXIN_CONFIG_PATH = 'unplugged_afk.mixins.json'
+//String LANG_DIR = 'assets/unplugged_afk/lang'
 JavaVersion JAVA_COMPATIBILITY
 if (mcVersion >= 260000) {
 	JAVA_COMPATIBILITY = JavaVersion.VERSION_25
@@ -116,7 +116,7 @@ if (mcVersion >= 260000) {
 JavaVersion MIXIN_COMPATIBILITY_LEVEL = JAVA_COMPATIBILITY
 
 loom {
-	accessWidenerPath = file("src/main/resources/afkme.accesswidener")
+	accessWidenerPath = file("src/main/resources/unplugged_afk.accesswidener")
 
 	def commonVmArgs = ['-Dmixin.debug.export=true', '-Dmixin.debug.countInjections=true']
 	runConfigs.configureEach {

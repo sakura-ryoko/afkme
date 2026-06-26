@@ -1,0 +1,27 @@
+{
+    "required": true,
+    "minVersion": "0.8",
+    "package": "com.sakuraryoko.unplugged_afk.impl.mixins",
+    "plugin": "com.sakuraryoko.unplugged_afk.impl.compat.mixin.UnpluggedAfkMixinConfigPlugin",
+    "compatibilityLevel": "{{COMPATIBILITY_LEVEL}}",
+    "mixins": [
+        "MixinConnection",
+        "MixinEntity",
+        "MixinMinecraftServer",
+        "MixinPistonMovingBlockEntity",
+        "MixinPlayer",
+        "MixinPlayerList",
+        "MixinServerLoginPacketListenerImpl",
+        "MixinServerPlayer_core",
+        "MixinServerPlayer_fakeMovement",
+        "MixinTickRateManager"
+    ],
+    "client": [
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    },
+    "overwrites": {
+        "requireAnnotations": true
+  }
+}
